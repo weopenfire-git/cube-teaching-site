@@ -27,7 +27,7 @@
   .pill{background:var(--panel2);border-radius:6px;padding:5px 10px;font-size:12px;color:var(--muted)}
   .pill b{color:var(--text);font-family:var(--mono);font-weight:500}
   .pill.good b{color:var(--ok)}
-  .modebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .modebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px;position:sticky;top:0;z-index:80;background:rgba(255,255,255,.94);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:10px 0 12px;box-shadow:0 1px 0 rgba(22,32,47,.06)}
   .modebar button{padding:9px 16px;font-size:13px;min-width:120px;text-align:center}
   .modebar button.on{background:var(--blue);color:#fff}
   .modehint{color:var(--muted);font-size:12px;margin-left:6px}
@@ -306,7 +306,7 @@
       <p class="sub">一课只解决一个单点问题：先给总体公式，再对照魔方图示找自己的情况，最后逐转跟着做。</p>
       <div class="statbar" id="statbar"></div>
     </div>
-    <span class="ver">v1.4.0 2026-11-14</span>
+    <span class="ver">v1.4.1 2026-11-14</span>
   </header>
 
   <div class="modebar">
@@ -483,6 +483,7 @@
   </main>
 
   <footer>
+    <b>v1.4.1：</b>顶部「📖 课程学习 / ⚡ 实战求解 / 🎯 个人练习」一栏改为<b>吸顶常驻</b>：往下滚动时三个模式标签、符号说明、登录/用户角标始终钉在页面最上方，随时可切换模式或登录。<br>
     <b>v1.4.0：</b>新增<b>登录与成就系统</b>：未登录可试用全部功能（课程学习 / 实战求解 / 个人练习）；点「💾 保存进度」或「⚔ 好友 PK」时才要求登录（邮箱 / 手机验证码 / 微信开发态模拟，三选一）。登录后成就与当前练习进度按账号保存在本机，并新增「成就与进度」卡片（初次复原 / 20 步与 35 步复原 / 累计五局 / 七课通关 / 三模式全体验等）。对接独立登录后端（默认 http://localhost:3001），好友 PK 面板下一轮上线。个人练习首次进入新增两步引导（① 符号说明 ② 操作栏）。<br>
     <b>v1.3.1：</b>跳过新手引导后的落点改为<b>页面顶部「三个模式标签」栏</b>（📖 课程学习 / ⚡ 实战求解 / 🎯 个人练习 贴顶可见，其上标题栏滚出视口）——不再深入滚到「本课起点」框，停在顶部就能直接切换三个模式。这是 v1.1.0「自动滚落点」的微调。<br>
     <b>v1.3.0：</b>新增<b>🎯 个人练习</b>：在「实战求解」旁加了一个模式，系统随机打乱魔方（可选 12/20/35 步），你用 R/U/F/L/D/B 转法键自己拧着复原，每转一步实时记录、随时「退一步 / 重来 / 检查是否复原」，卡住了点「看答案」会跳到实战求解按同一打乱给出标准七阶段解。键盘面键（R U F L D B，按住 Shift 出反方向）也能直接转。<br>
