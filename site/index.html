@@ -1,0 +1,1949 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>教学型魔方 v1.0.0 分级课程与 3D 连续拧转</title>
+<meta name="theme-color" content="#FFFFFF">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+  :root{
+    --bg:#FFFFFF; --panel:#FFFFFF; --panel2:#F4F7FC; --soft:#EDF2F9;
+    --blue:#2563EB; --blue-dim:#DBEAFE; --blue-deep:#1D4ED8;
+    --text:#16202F; --muted:#5C6779; --ok:#0F9D6E;
+    --mono:'Roboto Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:'Exo','Inter',-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.6}
+  .wrap{max-width:1340px;margin:0 auto;padding:26px 24px 48px}
+  header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;padding-bottom:18px;margin-bottom:18px}
+  h1{font-size:22px;font-weight:600;margin:0 0 6px;letter-spacing:.01em}
+  .sub{color:var(--muted);font-size:13px;margin:0}
+  .ver{font-family:var(--mono);font-size:11px;color:var(--blue-deep);background:var(--blue-dim);border-radius:5px;padding:4px 9px;white-space:nowrap}
+  .statbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .pill{background:var(--panel2);border-radius:6px;padding:5px 10px;font-size:12px;color:var(--muted)}
+  .pill b{color:var(--text);font-family:var(--mono);font-weight:500}
+  .pill.good b{color:var(--ok)}
+  .modebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .modebar button{padding:9px 16px;font-size:13px;min-width:120px;text-align:center}
+  .modebar button.on{background:var(--blue);color:#fff}
+  .modehint{color:var(--muted);font-size:12px;margin-left:6px}
+  .inputbar{background:var(--panel2);border-radius:10px;padding:14px 16px;margin-bottom:20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .inputbar label{font-size:12px;color:var(--muted);white-space:nowrap}
+  input[type=text]{flex:1;min-width:280px;background:#fff;color:var(--text);border-radius:7px;padding:9px 12px;font-family:var(--mono);font-size:13px;outline:none}
+  input[type=text]:focus{box-shadow:0 0 0 2px var(--blue-dim)}
+  button{background:var(--soft);color:var(--text);border-radius:7px;padding:8px 13px;font-family:var(--sans);font-size:13px;cursor:pointer;transition:background .15s,color .15s;white-space:nowrap}
+  button:hover{background:var(--blue-dim);color:var(--blue-deep)}
+  button.primary{background:var(--blue);color:#fff}
+  button.primary:hover{background:#4C8DF5;color:#fff}
+  button.on{background:var(--blue-dim);color:var(--blue-deep)}
+  button.slim{padding:7px 10px;font-size:12px}
+  .samples{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+  .samples button{padding:5px 10px;font-size:12px}
+  main{display:grid;grid-template-columns:500px minmax(0,1fr);gap:20px;align-items:start}
+  @media(max-width:1060px){main{grid-template-columns:1fr}}
+  @media(min-width:1061px){.leftcol{position:sticky;top:16px}}
+  .card{background:var(--panel2);border-radius:12px;padding:18px;margin-bottom:16px}
+  .card:last-child{margin-bottom:0}
+  .card h2{font-size:12px;font-weight:600;color:var(--muted);margin:0 0 14px;letter-spacing:.06em;text-transform:uppercase;font-family:var(--mono)}
+  .viewhead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px;min-height:30px}
+  .viewhead h2{margin:0}
+  .viewbtns{display:flex;gap:6px;flex-wrap:wrap}
+  .viewport{position:relative;background:#F7FAFE;border-radius:10px;overflow:hidden}
+  #cube3d{display:block;width:100%;height:424px;cursor:grab;touch-action:none}
+  #cube3d:active{cursor:grabbing}
+  .vp-hint{position:absolute;left:12px;bottom:8px;font-size:11px;color:var(--muted);background:rgba(255,255,255,.92);border-radius:5px;padding:3px 8px;pointer-events:none;font-family:var(--mono);z-index:2}
+  .vp-badge{position:absolute;right:12px;top:10px;font-size:11px;color:var(--muted);background:rgba(255,255,255,.92);border-radius:5px;padding:4px 9px;pointer-events:none;font-family:var(--mono)}
+  .vp-badge b{color:var(--blue-deep);font-weight:600}
+  /* 固定操作条：三列网格，按钮文字/状态变化都不会让它位移 */
+  .turnrow{display:grid;grid-template-columns:104px minmax(0,1fr) 92px;gap:8px;align-items:center;margin-top:12px}
+  .turnrow button{height:44px;text-align:center}
+  #btnTurnPrev{min-width:104px;font-size:12px}
+  #btnTurnNext{min-width:0;font-size:15px;font-weight:600;letter-spacing:.02em}
+  .turncounter{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:right;white-space:nowrap}
+  .turnbar{height:6px;background:#E6ECF4;border-radius:4px;margin-top:9px;overflow:hidden}
+  .turnbar>div{height:100%;width:0;background:linear-gradient(90deg,#2563EB,#7CB0FF);border-radius:3px}
+  .framebox{display:flex;align-items:center;gap:12px;margin-top:12px;background:#EAF1FA;border-radius:8px;padding:10px 13px;min-height:60px}
+  .framebox .now{font-family:var(--mono);font-size:24px;color:var(--blue-deep);min-width:56px}
+  .framebox .desc{font-size:12px;color:var(--muted);line-height:1.5}
+  .framebox .desc b{color:var(--text)}
+  .grip{margin-top:16px;color:var(--muted);font-size:12px;line-height:1.8;padding-top:12px}
+  .grip b{color:var(--text);font-weight:600}
+  details.aux{margin-top:14px;padding-top:10px}
+  details.aux summary{cursor:pointer;font-size:12px;color:var(--muted);outline:none}
+  details.aux summary:hover{color:var(--blue-deep)}
+  .net{display:grid;grid-template-columns:repeat(4,74px);grid-template-rows:repeat(3,74px);gap:6px;justify-content:center;margin-top:14px}
+  .face{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:3px;background:#E9EEF6;border-radius:7px;padding:5px;position:relative;transition:box-shadow .15s}
+  .face.active{box-shadow:0 0 0 2px var(--blue)}
+  .face::after{content:attr(data-face);position:absolute;top:-1px;left:4px;font-family:var(--mono);font-size:9px;color:#8A93A3;pointer-events:none}
+  .cell{border-radius:3px;transition:background-color .12s ease}
+  .fU{grid-column:2;grid-row:1}.fL{grid-column:1;grid-row:2}.fF{grid-column:2;grid-row:2}
+  .fR{grid-column:3;grid-row:2}.fB{grid-column:4;grid-row:2}.fD{grid-column:2;grid-row:3}
+  .leveltabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+  .leveltabs button{font-size:12px;padding:6px 12px;min-width:0}
+  .lessonlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:7px}
+  .lessonbtn{text-align:left;padding:9px 11px;font-size:12.5px;line-height:1.45;min-height:52px}
+  .lessonbtn b{display:block;font-family:var(--mono);font-size:10px;color:var(--muted);font-weight:400;margin-bottom:2px}
+  .lessonbtn.on{background:var(--blue-dim);color:var(--blue-deep)}
+  .lessonbtn.on b{color:var(--blue-deep)}
+  .outline{background:#EAF1FA;border-radius:8px;padding:12px 14px;margin-top:12px;color:var(--muted);font-size:12.5px;line-height:1.9}
+  .outline b{color:var(--text);font-weight:600}
+  .bigformula{font-family:var(--mono);font-size:23px;line-height:1.4;color:var(--text);background:#EAF1FA;border-radius:8px;padding:14px 16px;margin:0 0 12px;word-break:break-word;letter-spacing:.01em}
+  .formulaname{font-size:12px;color:var(--blue-deep);font-family:var(--mono);margin:0 0 7px}
+  .principle{font-size:16px;color:var(--text);margin:0 0 10px;font-weight:600}
+  .why{font-size:13px;color:#3F4A5C;line-height:1.85;margin:0 0 10px}
+  .hintline{font-size:12px;color:var(--muted);padding-top:10px;line-height:1.75}
+  .hintline b{color:var(--text);font-weight:600}
+  /* 本课起点窗：整块深蓝实底，明显区别于其它浅色卡片；不靠任何边框或竖线 */
+  .startbox{display:flex;gap:14px;align-items:stretch;margin-top:16px;padding:16px;
+    background:linear-gradient(135deg,#1E40AF 0%,#2563EB 55%,#3B82F6 100%);
+    border-radius:14px;box-shadow:0 10px 26px rgba(37,99,235,.24)}
+  .startnote{font-size:13px;line-height:1.75;flex:1;min-width:0;
+    background:rgba(255,255,255,.13);color:#F0F6FF;border-radius:10px;padding:12px 14px}
+  .startnote b{color:#fff;font-weight:700}
+  .startdiag{flex:none;width:138px;background:#fff;border-radius:10px;padding:9px 10px;text-align:center;cursor:pointer;outline:none;transition:transform .15s}
+  .startdiag:hover{transform:translateY(-2px)}
+  .startdiag:focus-visible{box-shadow:0 0 0 3px #fff}
+  .startdiag .lab{font-size:10px;color:var(--muted);line-height:1.35;margin-bottom:5px}
+  .startdiag .lab b{color:var(--blue-deep);font-weight:700}
+  .sdgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;width:66px;margin:0 auto}
+  .sdgrid>div{height:19px;border-radius:2px}
+  .sdgrid>div.dim{opacity:.3}
+  .sdgrid>div.hit{box-shadow:0 0 0 2px #2563EB}
+  .startdiag .cap{font-size:10px;color:var(--blue-deep);margin-top:5px;font-family:var(--mono)}
+  /* 分隔只靠留白，不再画线 */
+  .sectionline{height:0;margin:20px 0 16px}
+  .sect{font-size:13px!important;font-weight:700!important;color:var(--text)!important;letter-spacing:.02em!important;text-transform:none!important;font-family:var(--sans)!important;margin:0 0 9px!important}
+  .sect em{font-style:normal;color:var(--muted);font-weight:400;font-size:11px;margin-left:6px}
+  .diatip{font-size:11.5px;color:var(--muted);margin:0 0 11px;line-height:1.6}
+  /* 情况卡：左真实立体图，右关键面九宫格 + 四周侧条 */
+  .casegrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  @media(max-width:700px){.casegrid{grid-template-columns:1fr}}
+  .casecard{display:block;text-align:left;padding:11px;background:#fff;border-radius:10px;cursor:pointer;color:var(--text);font-family:var(--sans);outline:none;transition:background .15s,box-shadow .15s}
+  .casecard:hover{background:var(--blue-dim)}
+  .casecard:focus-visible{box-shadow:0 0 0 3px var(--blue-dim)}
+  .casecard.on{background:#DCE9FF;box-shadow:0 4px 14px rgba(37,99,235,.16)}
+  .cc-title{font-size:12.5px;font-weight:700;margin-bottom:8px;display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+  .cc-title .tag{font-family:var(--mono);font-size:10px;color:var(--muted);font-weight:400;white-space:nowrap}
+  .casecard.on .cc-title{color:var(--blue-deep)}
+  .cc-pics{display:flex;gap:7px;align-items:flex-start;justify-content:space-between}
+  .cc-3d{width:45%;aspect-ratio:1/1;height:auto;display:block;background:#F7FAFE;border-radius:6px;flex:none}
+  .cc-alg{font-family:var(--mono);font-size:10.5px;line-height:1.45;color:var(--blue-deep);margin-top:8px;word-break:break-word;padding-top:6px;min-height:32px}
+  .cc-alg i{font-style:normal;color:var(--muted);font-family:var(--sans);font-size:10px}
+  .cc-spot{font-size:11px;color:#4B5768;line-height:1.55;margin-top:5px;min-height:34px}
+  .diag-net{width:51%;aspect-ratio:1/1;height:auto;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(5,1fr);gap:2px;flex:none}
+  .cc-pics-label{font-size:9px;color:#8A93A3;font-family:var(--mono);line-height:1.3;margin-top:5px;text-align:center}
+  .diag-face{grid-area:2/2/5/5;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:2px;background:#E9EEF6;border-radius:4px;padding:2px}
+  .dcell{border-radius:2px;opacity:.32}
+  .dcell.lit{opacity:1}
+  .dcell.focus{box-shadow:0 0 0 2px #2563EB;position:relative;z-index:1}
+  .dstrip{border-radius:2px;opacity:.22}
+  .dstrip.lit{opacity:1}
+  .dstrip.focus{opacity:1;box-shadow:0 0 0 1px #2563EB}
+  /* 本课不管的块＝45° 斜线阴影，跟白色贴纸用纹理区分，不靠深浅 */
+  .dcell.gray,.dstrip.gray{opacity:1;
+    background:repeating-linear-gradient(135deg,#E6ECF5 0 4px,#A9B7CC 4px 6px)!important}
+  .keylegend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-top:9px;font-size:11.5px;color:#4B5768}
+  .keylegend .sw{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:5px;vertical-align:-3px}
+  .sw-color{background:#F5C63A}
+  .sw-focus{background:#F5C63A;box-shadow:0 0 0 2px #2563EB}
+  .sw-hatch{background:repeating-linear-gradient(135deg,#E6ECF5 0 3px,#A9B7CC 3px 5px)}
+  .caseintro{font-size:12.5px;color:#3F4A5C;background:#EAF1FA;border-radius:8px;padding:11px 14px;margin:11px 0 0;line-height:1.75}
+  .caseintro b{color:var(--text);font-weight:700}
+  .stagenav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+  .chip{background:var(--soft);border-radius:20px;padding:6px 12px;font-size:12px;cursor:pointer;color:var(--muted);white-space:nowrap}
+  .chip:hover{background:var(--blue-dim)}
+  .chip.cur{background:var(--blue);color:#fff}
+  .chip span{font-family:var(--mono);opacity:.7;margin-left:5px;font-size:11px}
+  .stepcard{background:#fff;border-radius:10px;padding:16px 18px;margin-bottom:16px;min-height:196px}
+  .steptop{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+  .stagename{font-size:12px;color:var(--blue-deep);font-family:var(--mono);letter-spacing:.04em}
+  .stepno{font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .formula{font-family:var(--mono);font-size:20px;line-height:1.5;color:var(--text);word-break:break-word;margin:0 0 12px;letter-spacing:.02em}
+  .explain{font-size:13.5px;line-height:1.8;color:#3F4A5C;margin:0 0 12px}
+  .goal{font-size:12px;color:var(--muted);padding-top:10px;line-height:1.7}
+  .goal b{color:var(--text);font-weight:600}
+  .progress{display:inline-block;font-family:var(--mono);font-size:11px;color:var(--ok);background:rgba(15,157,110,.1);border-radius:5px;padding:2px 8px;margin-left:6px}
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .controls button{min-width:88px;text-align:center}
+  #btnPlay{min-width:96px}
+  .controls .sep{width:6px;height:0;margin:0 2px}
+  .speed{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-left:auto}
+  input[type=range]{width:110px;accent-color:var(--blue)}
+  .speedval{font-family:var(--mono);color:var(--text);min-width:38px}
+  .listwrap{max-height:262px;overflow:auto;position:relative;border-radius:8px;background:#fff}
+  .listwrap::-webkit-scrollbar{width:8px}.listwrap::-webkit-scrollbar-thumb{background:#CDD6E3;border-radius:4px}
+  .row{display:flex;gap:10px;padding:8px 12px;cursor:pointer;font-size:12px;align-items:baseline;border-radius:6px}
+  .row:hover{background:#EDF3FB}
+  .row.cur{background:var(--blue-dim)}
+  .row .n{font-family:var(--mono);color:#8A93A3;min-width:26px}
+  .row .s{color:var(--muted);min-width:44px}
+  .row .m{font-family:var(--mono);color:var(--text);word-break:break-all}
+  .row .note{color:#4B5768;font-size:11.5px;line-height:1.55}
+  footer{margin-top:24px;padding-top:16px;color:var(--muted);font-size:12px;line-height:1.9}
+  footer b{color:var(--text);font-weight:600}
+  footer code{font-family:var(--mono);color:var(--blue-deep)}
+  .err{color:#B42318;background:#FEF3F2;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;display:none}
+  .leftcol .controls{margin-top:14px}
+
+  /* 进场封面：白底，魔方悬浮自转 */
+  #cover{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+    background:radial-gradient(120% 120% at 50% 28%, #FFFFFF 0%, #EEF3FC 58%, #E2EBF8 100%);transition:opacity .42s ease}
+  #cover[hidden]{display:none}
+  #cover.cover-out{opacity:0}
+  .cover-cube{width:240px;height:240px;display:block;filter:drop-shadow(0 14px 46px rgba(37,99,235,.2))}
+  .cover-title{font-size:42px;font-weight:700;margin:0;letter-spacing:.05em;color:#16202F}
+  .cover-sub{color:var(--muted);font-size:15px;margin:0}
+  .cover-btn{margin-top:8px;font-size:18px;font-weight:600;padding:14px 36px;border-radius:12px;
+    background:var(--blue);color:#fff;cursor:pointer;
+    box-shadow:0 10px 30px rgba(37,99,235,.28);transition:transform .12s,background .12s}
+  .cover-btn:hover{background:#4C8DF5;transform:translateY(-1px)}
+  .cover-hint{color:#8A93A3;font-size:12px;margin:2px 0 0}
+  .cover-step{font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;color:#3F4A5C;margin:6px 0 0;
+    min-width:290px;text-align:center;white-space:nowrap}
+  .cover-step b{color:var(--blue-deep);font-weight:700}
+  .cover-bar{width:290px;height:3px;border-radius:3px;background:#D7E1F1;overflow:hidden;margin:2px 0 0}
+  .cover-fill{height:100%;width:0;background:linear-gradient(90deg,#7AA7F7,#2563EB);border-radius:3px;
+    transition:width .16s linear}
+
+  /* 新手引导 coach marks：遮罩不拦截点击，仅话泡可交互 */
+  #coach{position:fixed;inset:0;z-index:9000;pointer-events:none}
+  #coach[hidden]{display:none}
+  .coach-spot{position:fixed;border-radius:12px;
+    box-shadow:0 0 0 2px var(--blue),0 0 0 9999px rgba(15,23,42,.34);pointer-events:none;z-index:9000;
+    transition:left .18s ease,top .18s ease,width .18s ease,height .18s ease}
+  .coach-bubble{position:fixed;z-index:9001;max-width:320px;background:#fff;
+    border-radius:12px;padding:16px 16px 12px;
+    box-shadow:0 18px 50px rgba(15,23,42,.24);pointer-events:auto;color:var(--text)}
+  .coach-step{font-size:14px;font-weight:700;color:var(--blue-deep);margin-bottom:8px}
+  .coach-msg{font-size:13px;line-height:1.75;color:#3F4A5C;margin-bottom:14px}
+  .coach-actions{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+  .coach-progress{margin-right:auto;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .coach-actions button{pointer-events:auto}
+  .coach-arrow{position:absolute;width:18px;height:18px;background:var(--blue);pointer-events:none;z-index:9002;filter:drop-shadow(0 0 4px rgba(37,99,235,.7))}
+  .coach-arrow.down{clip-path:polygon(50% 100%,0 0,100% 0);left:50%;margin-left:-9px;top:100%}
+  .coach-arrow.up{clip-path:polygon(50% 0,0 100%,100% 100%);left:50%;margin-left:-9px;bottom:100%}
+  .coach-arrow.left{clip-path:polygon(0 50%,100% 0,100% 100%);top:50%;margin-top:-9px;right:100%}
+  .coach-arrow.right{clip-path:polygon(100% 50%,0 0,0 100%);top:50%;margin-top:-9px;left:100%}
+
+  /* 符号说明：文字 + 对应魔方转动示意 */
+  #notation{position:fixed;inset:0;z-index:9500;background:rgba(15,23,42,.42);display:flex;align-items:center;justify-content:center;padding:20px}
+  #notation[hidden]{display:none}
+  .notation-panel{background:#fff;border-radius:16px;max-width:900px;width:100%;max-height:88vh;overflow:auto;padding:22px 24px;box-shadow:0 24px 70px rgba(15,23,42,.28)}
+  .notation-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+  .notation-head h2{margin:0;font-size:20px;font-weight:700}
+  .notation-head p{margin:5px 0 0;color:var(--muted);font-size:12.5px;line-height:1.7}
+  .notation-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:18px}
+  @media(max-width:720px){.notation-grid{grid-template-columns:1fr}}
+  .notation-item{display:flex;gap:12px;align-items:flex-start;background:var(--panel2);border-radius:12px;padding:11px;cursor:pointer;transition:background .15s}
+  .notation-item:hover{background:var(--blue-dim)}
+  .notation-canvas{width:94px;height:94px;flex:none;border-radius:9px;background:#F7FAFE;display:block}
+  .notation-txt{min-width:0;padding-top:2px}
+  .notation-txt .sym{font-family:var(--mono);font-size:19px;font-weight:700;color:var(--blue-deep)}
+  .notation-txt .nm{font-size:11.5px;color:var(--muted);margin:1px 0 5px}
+  .notation-txt .ds{font-size:12px;line-height:1.7;color:#3F4A5C}
+  .notation-foot{margin-top:16px;font-size:12px;color:var(--muted);line-height:1.8}
+  .notation-foot b{color:var(--text)}
+
+  /* 个人练习 */
+  #practicePanel .prac-sub{margin:4px 0 14px;color:var(--muted);font-size:12.5px;line-height:1.7}
+  .prac-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+  .prac-diff{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+  .prac-diff select{font:inherit;font-size:13px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--text)}
+  .prac-status{font-size:14px;line-height:1.6;padding:10px 12px;border-radius:10px;background:var(--panel2);min-height:20px;margin-bottom:4px}
+  .prac-status.good{background:#E6F7EE;color:#12794C}
+  .prac-status.warn{background:#FFF5E6;color:#9A5B00}
+  .turnpad{display:flex;flex-direction:column;gap:7px;margin:8px 0 14px}
+  .tp-row{display:grid;grid-template-columns:34px repeat(3,minmax(0,1fr));gap:7px;align-items:center}
+  .tp-face{font-family:var(--mono);font-weight:700;font-size:15px;text-align:center;color:var(--blue-deep);
+    background:var(--blue-dim);border-radius:8px;height:42px;line-height:42px}
+  .tp-btn{height:42px;border-radius:8px;border:1px solid var(--line);background:#fff;font-family:var(--mono);
+    font-size:15px;font-weight:700;color:var(--text);cursor:pointer;transition:transform .06s,background .12s}
+  .tp-btn:hover{background:var(--blue-dim)}
+  .tp-btn:active{transform:scale(.95);background:var(--blue)}
+  .prac-actions{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:6px}
+  .prac-actions button{height:40px}
+  #listwrapPrac .row .note{cursor:default}
+  #listwrapPrac .empty{color:var(--muted);font-size:12.5px;padding:8px 4px}
+  /* ---------- 登录 / 成就 ---------- */
+  .auth-area{display:inline-flex;align-items:center;gap:8px;margin-left:2px}
+  .user-chip{display:inline-flex;align-items:center;gap:7px;background:var(--panel2);border-radius:999px;padding:4px 10px 4px 4px}
+  .user-chip .avatar{width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex:none}
+  .user-chip .uname{font-size:12px;color:var(--text);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .modal{position:fixed;inset:0;z-index:900;display:flex;align-items:center;justify-content:center}
+  .modal-mask{position:absolute;inset:0;background:rgba(15,20,30,.45)}
+  .modal-card{position:relative;background:#fff;border-radius:14px;padding:22px 24px;width:min(400px,92vw);max-height:86vh;overflow:auto;box-shadow:0 18px 50px rgba(15,20,30,.25)}
+  .modal-x{position:absolute;top:10px;right:10px;border:none;background:none;font-size:20px;line-height:1;color:var(--muted);padding:4px 8px}
+  .modal-title{margin:0 0 12px;font-size:17px;color:var(--text)}
+  .modal .tabs{display:flex;gap:6px;margin-bottom:14px}
+  .modal .tab{padding:7px 14px;font-size:13px}
+  .modal .tab.on{background:var(--blue);color:#fff}
+  .modal .tabpane label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+  .modal .tabpane input{width:100%;box-sizing:border-box;background:#fff;border:1px solid #D8DFEA;border-radius:7px;padding:9px 11px;font-size:13px;font-family:var(--sans);outline:none}
+  .modal .tabpane input:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-dim)}
+  .modal-row{display:flex;gap:8px;margin-top:12px}
+  .modal-row input{flex:1}
+  .modal-hint{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.5;min-height:1em}
+  .modal-hint.err{color:#C0392B}
+  .modal-hint.ok{color:var(--ok)}
+  .ach-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+  .ach-item{background:#fff;border-radius:9px;padding:10px 12px;opacity:.5}
+  .ach-item.on{opacity:1;box-shadow:inset 0 0 0 1.5px var(--blue)}
+  .ach-item .at{font-size:13px;font-weight:600;color:var(--text)}
+  .ach-item .ad{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.45}
+  .ach-item .ast{font-size:11px;margin-top:5px;font-family:var(--mono)}
+  .ach-item.on .ast{color:var(--ok)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>魔方教学 分级课程与 3D 演示</h1>
+      <p class="sub">一课只解决一个单点问题：先给总体公式，再对照魔方图示找自己的情况，最后逐转跟着做。</p>
+      <div class="statbar" id="statbar"></div>
+    </div>
+    <span class="ver">v1.4.0 2026-11-14</span>
+  </header>
+
+  <div class="modebar">
+    <button id="modeLesson" class="on">📖 课程学习</button>
+    <button id="modeSolve">⚡ 实战求解</button>
+    <button id="modePractice">🎯 个人练习</button>
+    <span class="modehint" id="modeHint">初级七课：一课只多拼好一类块，没学的块仍是乱的</span>
+    <button id="btnNotation" class="slim" title="R / U / F 这些符号是什么，配魔方转动示意">🔤 符号说明</button>
+    <button id="btnHelp" class="slim" title="新手引导：怎么停、怎么一步步转">？ 怎么用</button>
+    <span class="auth-area" id="authArea">
+      <button id="btnLogin" class="slim">登录</button>
+      <span id="userChip" class="user-chip" hidden>
+        <span class="avatar" id="userAvatar">?</span>
+        <span id="userName" class="uname"></span>
+        <button id="btnLogout" class="slim">退出</button>
+      </span>
+    </span>
+  </div>
+
+  <div class="err" id="err"></div>
+
+  <div class="inputbar" id="inputbar" hidden>
+    <label for="scramble">打乱公式</label>
+    <input type="text" id="scramble" spellcheck="false" value="R U R' F2 L D2 B U' R2">
+    <button class="primary" id="btnLoad">生成七阶段解</button>
+    <button id="btnRandom">随机打乱</button>
+    <div class="samples">
+      <button data-alg="R U R' F2 L D2 B U' R2">入门 10 步</button>
+      <button data-alg="D F2 B' D R D L R L2 B L' U' F2 R B F' D B2 L' B2">样例 A</button>
+      <button data-alg="U B2 F B2 U2 F2 B F2 R F' U' R2 L' R' L F' L R' L' U2">样例 B</button>
+    </div>
+  </div>
+
+  <main>
+    <section class="card leftcol">
+      <div class="viewhead">
+        <h2>3D 立体视图</h2>
+        <div class="viewbtns">
+          <button class="slim" data-view="iso">斜视</button>
+          <button class="slim" data-view="front">正面</button>
+          <button class="slim" data-view="top">俯视</button>
+          <button class="slim" data-view="bottom">底面</button>
+          <button class="slim" id="btnGray" hidden>只看白块</button>
+        </div>
+      </div>
+      <div class="viewport">
+        <canvas id="cube3d"></canvas>
+        <div class="vp-hint">拖拽旋转 滚轮缩放 空格播放 / ← → 单转</div>
+        <div class="vp-badge" id="vpBadge">U / F / R 三面可见</div>
+      </div>
+
+      <!-- 主播放控制：紧跟大魔方下方，一进入就能看见，不用翻到底部找按钮 -->
+      <div class="controls">
+        <button id="btnPrev">◀ 上一段</button>
+        <button id="btnPlay" class="primary">⏸ 暂停</button>
+        <button id="btnNext">下一段 ▶</button>
+        <button id="btnReset">⏮ 重置</button>
+        <div class="sep"></div>
+        <button id="btnLoop" class="on">⟳ 单段循环</button>
+        <button id="btnAuto">⏭ 自动连播</button>
+        <div class="speed">速度 <input type="range" id="speed" min="0" max="4" step="1" value="2"><span class="speedval" id="speedVal">1×</span></div>
+      </div>
+
+      <!-- 位置固定：此行上方只有固定高度的标题与画布，按钮不会因播放状态/文字变化而位移 -->
+      <div class="turnrow">
+        <button id="btnTurnPrev">|◀ 退一转</button>
+        <button id="btnTurnNext" class="primary">单转下一格 ▶|</button>
+        <span class="turncounter" id="turnCounter">第 0 / 0 转</span>
+      </div>
+      <div class="turnbar"><div id="turnFill"></div></div>
+
+      <div class="framebox">
+        <div class="now" id="frameNow">—</div>
+        <div class="desc" id="frameDesc">等待播放</div>
+      </div>
+
+      <details class="aux">
+        <summary>六面展开图（辅助对照，默认收起）</summary>
+        <div class="net" id="net"></div>
+      </details>
+    </section>
+
+    <section>
+      <!-- ===== 课程模式：总览、情况图、分步列表连成同一张卡片 ===== -->
+      <div id="lessonPanel">
+        <div class="card">
+          <h2>课程目录</h2>
+          <div class="leveltabs" id="leveltabs"></div>
+          <div class="lessonlist" id="lessonlist"></div>
+          <div class="outline" id="levelOutline" hidden></div>
+        </div>
+        <div class="card" id="overviewCard">
+          <h2>本课总览 先记住这一套公式</h2>
+          <p class="formulaname" id="formulaName"></p>
+          <p class="bigformula" id="bigFormula"></p>
+          <p class="principle" id="principle"></p>
+          <p class="why" id="whyText"></p>
+          <div class="hintline" id="hintLine"></div>
+          <div class="startbox">
+            <div class="startnote" id="startNote"></div>
+            <div class="startdiag" id="startDiag" role="button" tabindex="0" title="点这里把左侧 3D 视图切到白色底面"></div>
+          </div>
+
+          <div class="sectionline"></div>
+          <h2 class="sect">对照你的魔方，找你是哪种情况 <em>点卡片切换 图和公式在同一页</em></h2>
+          <p class="diatip" id="diagTip"></p>
+          <div class="casegrid" id="casegrid"></div>
+          <div class="caseintro" id="caseIntro"></div>
+
+          <div class="sectionline"></div>
+          <h2 class="sect">逐转跟着做 <em id="turnListTitle"></em></h2>
+          <div class="listwrap" id="listwrapLesson"></div>
+        </div>
+      </div>
+
+      <!-- ===== 实战求解模式 ===== -->
+      <div id="solvePanel" hidden>
+        <div class="card">
+          <h2>七阶段导航</h2>
+          <div class="stagenav" id="stagenav"></div>
+          <div class="stepcard" id="stepcard"></div>
+          <div class="listwrap" id="listwrap"></div>
+        </div>
+      </div>
+
+      <!-- ===== 个人练习模式 ===== -->
+      <div id="practicePanel" hidden>
+        <div class="card">
+          <h2>个人练习</h2>
+          <p class="prac-sub">系统随机打乱你的魔方，自己动手转，转到六面复原为止。卡住了再看答案。</p>
+          <div class="prac-bar">
+            <label class="prac-diff">难度
+              <select id="pracDifficulty">
+                <option value="12">简单 12 步</option>
+                <option value="20" selected>标准 20 步</option>
+                <option value="35">挑战 35 步</option>
+              </select>
+            </label>
+            <button class="primary" id="pracNew">🎲 新打乱</button>
+            <button id="pracReset">重来</button>
+            <button class="slim" id="pracHelp" title="重看操作提示">？操作提示</button>
+          </div>
+          <div class="prac-status" id="pracStatus">点「新打乱」开始</div>
+          <h2 class="sect">转这里 <em>点一下，魔方就拧一下</em></h2>
+          <div class="turnpad" id="turnpad"></div>
+          <div class="prac-actions">
+            <button id="pracUndo">|◀ 退一步</button>
+            <button id="pracCheck">检查是否复原</button>
+            <button id="pracAnswer">看答案</button>
+          </div>
+          <div class="sectionline"></div>
+          <h2 class="sect">我的转法 <em>按时间顺序，点任意一步可跳回</em></h2>
+          <div class="listwrap" id="listwrapPrac"></div>
+        </div>
+      </div>
+
+      <!-- 握法与练习说明：放在右栏，左栏只留操作与当前逐转信息 -->
+      <div class="card">
+        <h2>握法与练习说明</h2>
+        <div class="grip" id="grip"></div>
+      </div>
+
+    <div class="card" id="achCard">
+      <h2>成就与进度</h2>
+      <p class="prac-sub">登录后，你的成就与当前练习进度会按账号保存；未登录也能玩，只是不留存。</p>
+      <div class="ach-list" id="achList"></div>
+      <div class="prac-actions" style="margin-top:12px">
+        <button id="btnSaveProgress">💾 保存进度</button>
+        <button id="btnPK">⚔ 好友 PK</button>
+      </div>
+      <div class="modal-hint" id="achHint"></div>
+    </div>
+  </section>
+  </main>
+
+  <footer>
+    <b>v1.4.0：</b>新增<b>登录与成就系统</b>：未登录可试用全部功能（课程学习 / 实战求解 / 个人练习）；点「💾 保存进度」或「⚔ 好友 PK」时才要求登录（邮箱 / 手机验证码 / 微信开发态模拟，三选一）。登录后成就与当前练习进度按账号保存在本机，并新增「成就与进度」卡片（初次复原 / 20 步与 35 步复原 / 累计五局 / 七课通关 / 三模式全体验等）。对接独立登录后端（默认 http://localhost:3001），好友 PK 面板下一轮上线。个人练习首次进入新增两步引导（① 符号说明 ② 操作栏）。<br>
+    <b>v1.3.1：</b>跳过新手引导后的落点改为<b>页面顶部「三个模式标签」栏</b>（📖 课程学习 / ⚡ 实战求解 / 🎯 个人练习 贴顶可见，其上标题栏滚出视口）——不再深入滚到「本课起点」框，停在顶部就能直接切换三个模式。这是 v1.1.0「自动滚落点」的微调。<br>
+    <b>v1.3.0：</b>新增<b>🎯 个人练习</b>：在「实战求解」旁加了一个模式，系统随机打乱魔方（可选 12/20/35 步），你用 R/U/F/L/D/B 转法键自己拧着复原，每转一步实时记录、随时「退一步 / 重来 / 检查是否复原」，卡住了点「看答案」会跳到实战求解按同一打乱给出标准七阶段解。键盘面键（R U F L D B，按住 Shift 出反方向）也能直接转。<br>
+    <b>v1.2.0：</b>无效块不再画成浅灰，一律改成<b>45° 斜线阴影</b>——白色贴纸在背光面会被光照压暗，靠深浅永远分不清，改用纹理区分，情况图与 3D 主视图一致并配图例。<b>逐转时不再「色块变色」</b>：原来「有效块」按槽位位置判定，转完落位时一转有 6–8 张贴纸在彩色与去干扰之间瞬变；现在把有效块当作贴纸自身的属性，和状态一起按同一置换搬运，颜色与斜线全程不变，终点仍回到「下两层保色 + 目标块描蓝框」。<b>封面加长</b>：4 组 24 步伪随机打乱 + 24 步逐转复原（共 48 转/循环），带实时步数、当前记号与进度条。<br>
+    <b>v1.1.0：</b>七课全部改用<b>阶段真实状态</b>——每课的终点不再伪装成六面复原：前序阶段和本课刚拼好的块是真的拼好并保留颜色，后面还没学的块是真的乱着并打上斜线，所以一眼看得出「这一课到底多拼好了哪一块」。第 2 课的白十字、第 3 课的白色第一层、第 4 课的下面两层都是真实保留的成果；只有最后一课（第 7 课）终点才是六面复原。<b>状态由真实求解器生成</b>：同一个 seed=14 的打乱跑七阶段层先法，逐阶段截取 E1..E7，再由终点倒做本课公式得到起点；生成与校验脚本见 <code>gen-stage-states.cjs</code>。另外：看完讲解或点「跳过」后，页面自动落到阅读落点（v1.3.1 起改为滚到顶部三模式标签栏，其上标题栏滚出视口，不再深入滚到「本课起点」框）；起点框里重复两次的标题已去掉。<br>
+    <b>v1.0.0：</b>七课统一改成<b>突出块显示</b>；第 4 课三种情况重做为真正可区分的「点 / L 形 / 直线」；新手引导新增「不再自动弹出」；「退一转」也带连续拧转动画；封面改为假随机打乱后逐转复原；逐转区改放情况标题、总转数与当前转讲解，握法移到右栏；全站不再使用间隔点。<br>
+    <b>v0.9.0：</b>白底浅色主题、去掉所有装饰线、「本课起点」独立深蓝窗、第 1 课四种情况重做、新增「🔤 符号说明」。<b>v0.8.0：</b>进场封面动画。<b>v0.7.0：</b>聚光灯 + 箭头的新手引导。<br>
+    <b>达标口径：</b>逐课按真实阶段目标校验——第 1 课白十字 4/4，第 2 课四个白角 4/4，第 3 课四条中层棱 4/4，第 4 课黄十字 4/4，第 5 课顶面 9 格全黄，第 6 课四个顶角归位，第 7 课六面复原；第 1–6 课终点明确要求<b>不得</b>六面复原。22 个演示还逐条校验「前序成果在起点没被破坏」「本课目标由未达成做到达成」，全部通过自动校验。<br>
+    <b>图怎么来的：</b>每张情况卡的立体图与九宫格都由该情况的真实起始状态渲染，斜线阴影盖住本课不管的块，蓝框跟着本课要盯的那块贴纸走，不是画死的装饰图。<br>
+    <b>中级 / 高级：</b>目录已列出大纲（F2L、2-look OLL/PLL、全公式与竞速），标注「规划中」，尚未实现，不假装做完。<br>
+    <b>还没做：</b>六面照片识别、公式库检索、可分享状态链接、微信端适配、导出 MP4。求解与 3D 渲染全在本地，零外部依赖，<code>file://</code> 可直开。
+  </footer>
+
+  <!-- 新手引导（coach marks）：聚光灯 + 带箭头的话泡，指向关键按钮；遮罩不拦截点击，页面照常可操作 -->
+  <div id="coach" hidden>
+    <div class="coach-spot" id="coachSpot"></div>
+    <div class="coach-bubble" id="coachBubble">
+      <div class="coach-arrow" id="coachArrow"></div>
+      <div class="coach-step" id="coachStepTxt"></div>
+      <div class="coach-msg" id="coachMsg"></div>
+      <div class="coach-actions">
+        <button class="slim" id="coachNever" style="font-size:11px;margin-right:auto">不再自动弹出</button>
+        <span class="coach-progress" id="coachProgress" style="margin-right:0"></span>
+        <button class="slim" id="coachSkip">跳过</button>
+        <button class="slim" id="coachPrev">上一步</button>
+        <button class="primary" id="coachNext">下一步</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 登录 / 注册弹窗 -->
+  <div id="authModal" class="modal" hidden>
+    <div class="modal-mask" id="authMask"></div>
+    <div class="modal-card" role="dialog" aria-modal="true">
+      <button class="modal-x" id="authClose" title="关闭">×</button>
+      <h3 class="modal-title">登录 / 注册</h3>
+      <div class="modal-hint" id="authGlobalHint"></div>
+      <div class="tabs" id="authTabs">
+        <button class="tab on" data-tab="email">邮箱</button>
+        <button class="tab" data-tab="phone">手机号</button>
+        <button class="tab" data-tab="wechat">微信</button>
+      </div>
+
+      <div class="tabpane" data-pane="email">
+        <label>邮箱 <input id="auEmail" type="email" placeholder="you@example.com" autocomplete="username"></label>
+        <label>用户名（仅注册） <input id="auUsername" placeholder="昵称"></label>
+        <label>密码（≥ 6 位） <input id="auPass" type="password" placeholder="••••••" autocomplete="current-password"></label>
+        <div class="modal-row">
+          <button class="primary" id="auEmailReg">注册</button>
+          <button id="auEmailLogin">登录</button>
+        </div>
+        <div class="modal-hint" id="auEmailHint"></div>
+      </div>
+
+      <div class="tabpane" data-pane="phone" hidden>
+        <label>手机号（E.164，如 +8613812345678） <input id="auPhone" placeholder="+86138..."></label>
+        <div class="modal-row">
+          <button id="auPhoneCode">获取验证码</button>
+          <input id="auCode" placeholder="验证码" style="flex:1">
+        </div>
+        <div class="modal-row">
+          <button class="primary" id="auPhoneLogin">登录 / 免密注册</button>
+        </div>
+        <div class="modal-hint" id="auPhoneHint"></div>
+      </div>
+
+      <div class="tabpane" data-pane="wechat" hidden>
+        <button class="primary" id="auWechat">微信模拟登录（开发态）</button>
+        <div class="modal-hint" id="auWechatHint">生产环境会跳转微信扫码；开发态直接模拟一个账号登录。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 进场封面：魔方自转作为进场动画 / App 封面 -->
+  <div id="cover" hidden>
+    <canvas id="coverCube" class="cover-cube"></canvas>
+    <h1 class="cover-title">魔方教学</h1>
+    <p class="cover-sub">24 步随机打乱 → 逐转复原，七课教会你自己的魔方</p>
+    <p class="cover-step" id="coverStep">准备打乱</p>
+    <div class="cover-bar"><div class="cover-fill" id="coverFill"></div></div>
+    <button id="coverStart" class="cover-btn">开始学习 →</button>
+    <p class="cover-hint" id="coverHint">封面循环演示打乱与复原，点「开始学习」进入课程</p>
+  </div>
+
+  <!-- 符号说明：文字 + 每个记号对应的魔方转动示意 -->
+  <div id="notation" hidden>
+    <div class="notation-panel" role="dialog" aria-modal="true" aria-label="转动符号说明">
+      <div class="notation-head">
+        <div>
+          <h2>公式里的 R、U、F 是什么意思？</h2>
+          <p>每个符号旁边的小魔方会自动演示这一转。点任意一条可以立刻重播。</p>
+        </div>
+        <button class="slim" id="notationClose">关闭 ✕</button>
+      </div>
+      <div class="notation-grid" id="notationGrid"></div>
+      <div class="notation-foot">
+        <b>方向怎么定：</b>字母说的是「转哪一面」，顺时针一律按<b>正对着那一面看</b>算，不是按你现在看到的正面。比如 R 是正对右面看的顺时针，低头从上面看方向是反的。<br>
+        <b>小写 y：</b>把整个魔方水平转一下换握法，不是拧某一层；公式里出现它，只是为了让目标槽位转到你顺手的位置，公式结束会转回来。
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="./cube-core.js"></script>
+<script src="./cube-3d.js"></script>
+<script src="./cube-lessons.js"></script>
+<script src="./authClient.js"></script>
+<script>
+(function () {
+  'use strict';
+  var Cube = window.CubeCore, R3 = window.Cube3D, L = window.CubeLessons;
+  var CSS = ['#F2F4F8', '#F5C63A', '#22A06B', '#2F6FE4', '#E5484D', '#F08A34'];
+  var SPEEDS = [0.25, 0.5, 1, 1.5, 2];
+  var BASE_TURN = 400, TURN_GAP = 90, LOOP_GAP = 460;
+  var $ = function (id) { return document.getElementById(id); };
+
+  var renderer = R3.createRenderer($('cube3d'), CSS);
+  var caseRenderers = [];
+  var mode = 'lesson', levelIdx = 0, lessonIdx = 0, caseIdx = 0, demo = null;
+  var result = null, steps = [], cur = 0, frame = 0;
+  // 个人练习：practiceStart = 打乱后的起点状态；practiceTokens = 用户自己转过的记号序列
+  var practiceStart = null, practiceTokens = [], practiceScrambleAlg = '';
+  var playing = true, loopStep = true, autoAdvance = false, speedIdx = 2;
+  var anim = null, gap = 0, loopGap = 0, once = false;
+  var needDraw = true, lastTs = 0;
+  var cells = [], faceEls = {};
+  var grayMode = true;   // 七课默认开启「突出块显示」：已完成 + 当前目标保色，其余打上斜线
+  var VIEWS = {
+    iso:    { yaw: -32, pitch: 24, zoom: 1, label: 'U / F / R 三面可见' },
+    front:  { yaw: 0,   pitch: 8,  zoom: 1, label: '正视 F 面' },
+    top:    { yaw: -20, pitch: 72, zoom: 1, label: '俯视 U 面' },
+    bottom: { yaw: 20,  pitch: -66, zoom: 1, label: '仰视 D 面（白底）' }
+  };
+
+  (function buildNet() {
+    var net = $('net');
+    Cube.FACES.forEach(function (f) {
+      var box = document.createElement('div');
+      box.className = 'face f' + f;
+      box.setAttribute('data-face', f);
+      net.appendChild(box);
+      faceEls[f] = box;
+      for (var i = 0; i < 9; i++) {
+        var c = document.createElement('div'); c.className = 'cell';
+        box.appendChild(c); cells.push(c);
+      }
+    });
+  })();
+
+  /* ---------- 统一播放数据源：课程 = 演示序列，实战 = 教学单元 ---------- */
+  function curUnit() { return steps[cur]; }
+  function tokensOf(u) { return u ? u.notation.split(' ') : []; }
+  function turns() {
+    if (mode === 'practice') return practiceTokens;
+    return mode === 'lesson' ? (demo ? demo.tokens : []) : tokensOf(curUnit());
+  }
+  function stateAt(k) {
+    if (mode === 'practice') {
+      if (!practiceStart) return null;
+      k = Math.max(0, Math.min(practiceTokens.length, k));
+      return Cube.applySeq(practiceStart, practiceTokens.slice(0, k));
+    }
+    if (mode === 'lesson') return demo ? demo.states[k] : null;
+    var u = curUnit(); if (!u) return null;
+    return k === 0 ? u.stateBefore : u.frames[k - 1];
+  }
+  function noteAt(k) {
+    if (mode === 'lesson') return demo ? demo.notes[k] : '';
+    if (mode === 'practice') return '';
+    var u = curUnit(); return u ? u.text : '';
+  }
+  function setStatic(s) {
+    if (!s) return;
+    for (var i = 0; i < 54; i++) cells[i].style.backgroundColor = CSS[s[i]];
+    needDraw = true;
+  }
+  function markFace(token) {
+    for (var f in faceEls) faceEls[f].classList.remove('active');
+    if (!token || token.charAt(0) === 'y') return;
+    var el = faceEls[token.charAt(0)]; if (el) el.classList.add('active');
+  }
+  function showError(msg) {
+    var e = $('err'); e.textContent = msg; e.style.display = msg ? 'block' : 'none';
+  }
+  function ease(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+  function invertTok(t) {
+    if (t.charAt(1) === '2') return t;
+    if (t.charAt(1) === "'") return t.charAt(0);
+    return t.charAt(0) + "'";
+  }
+  function spd() { return SPEEDS[speedIdx]; }
+  function resetPlay() { anim = null; once = false; gap = 0; loopGap = 0; frame = 0; needDraw = true; }
+  function syncPlayBtn() { $('btnPlay').textContent = playing ? '⏸ 暂停' : '▶ 播放'; }
+  // 第 1 课：把「白色棱块贴纸」所在槽位找出来描蓝框，四张情况卡就能看出白棱散在哪
+  function whiteEdgeSlots(state) {
+    var a = [];
+    if (!state) return a;
+    for (var i = 0; i < 54; i++) {
+      if (state[i] !== Cube.C.W) continue;
+      var p = Cube.GEOM[i].p;
+      var nz = (p[0] !== 0 ? 1 : 0) + (p[1] !== 0 ? 1 : 0) + (p[2] !== 0 ? 1 : 0);
+      if (nz === 2) a.push(i);       // 棱块；中心 nz=1、角块 nz=3
+    }
+    return a;
+  }
+  /* ---------- 「有效块」掩码：跟着贴纸走，逐转时不再变色 ----------
+   * 旧逻辑按「槽位位置」判定有效块：一转结束落位时，同一张贴纸会被重新判定，
+   * 实测一转有 6–8 张贴纸在「彩色 ↔ 斜线」间瞬变，看起来就像色块变色。
+   * 现在把「已完成块 / 目标块」当成贴纸自身的属性，和状态一起按同一置换搬运。
+   * 第 2–7 课把基准锚在演示终点（阶段真实状态：下两层保色 + 目标块描蓝框），
+   * 再用剩余公式逆推到每一帧；第 1 课的蓝框基准在起点（散落的白棱）。 */
+  var ID54 = [];
+  for (var _si = 0; _si < 54; _si++) ID54[_si] = _si;
+  var focusMasks = null;      // { keep: [每帧 54 位掩码], accent: [...] }
+  function maskFromSlots(arr) {
+    var m = new Array(54), i;
+    for (i = 0; i < 54; i++) m[i] = false;
+    if (arr) for (i = 0; i < arr.length; i++)
+      if (arr[i] >= 0 && arr[i] < 54) m[arr[i]] = true;
+    return m;
+  }
+  function slotsFromMask(m) {
+    if (!m) return null;
+    var a = [];
+    for (var i = 0; i < 54; i++) if (m[i]) a.push(i);
+    return a;
+  }
+  function permuteMask(m, tok) {
+    if (!m) return null;
+    var origin = Cube.applyMove(ID54, tok);   // origin[j] = 转到槽位 j 的那张贴纸原来的槽位
+    var out = new Array(54);
+    for (var j = 0; j < 54; j++) out[j] = m[origin[j]];
+    return out;
+  }
+  function buildFocusMasks(d, li) {
+    var n = d.tokens.length, k;
+    var keepFrames = null, accentFrames = new Array(n + 1);
+    if (li === 0) {
+      accentFrames[0] = maskFromSlots(whiteEdgeSlots(d.startState));
+      for (k = 0; k < n; k++) accentFrames[k + 1] = permuteMask(accentFrames[k], d.tokens[k]);
+    } else {
+      var f = L.focus3d(li + 1);
+      keepFrames = new Array(n + 1);
+      keepFrames[n] = maskFromSlots(f ? f.keep : null);
+      accentFrames[n] = maskFromSlots(f ? f.accent : null);
+      for (k = n - 1; k >= 0; k--) {
+        var inv = invertTok(d.tokens[k]);
+        keepFrames[k] = permuteMask(keepFrames[k + 1], inv);
+        accentFrames[k] = permuteMask(accentFrames[k + 1], inv);
+      }
+    }
+    return { keep: keepFrames, accent: accentFrames };
+  }
+  // 把某一帧的掩码套到任意渲染器（主视图用当前 frame，情况卡用 0）
+  function applyMasksToRenderer(r, masks, k, li) {
+    if (!masks) { r.setFocus(null); return; }
+    if (li === 0) {
+      r.setFocus(Cube.C.W, 'cross');       // 白棱按颜色 + 非角块判定，天然跟着贴纸走
+      r.setAccent(slotsFromMask(masks.accent[k]));
+    } else {
+      r.setSlots(slotsFromMask(masks.keep[k]), slotsFromMask(masks.accent[k]));
+    }
+  }
+  function setRendererFocus(r, li, on, startState, masks) {
+    if (!on) { r.setFocus(null); return; }
+    if (li === 0 && !masks) {              // 兼容没有预计算掩码的场景
+      r.setFocus(Cube.C.W, 'cross'); r.setAccent(whiteEdgeSlots(startState)); return;
+    }
+    applyMasksToRenderer(r, masks, 0, li);
+  }
+  function applyFocus() {
+    if ($('btnGray')) {
+      $('btnGray').hidden = mode !== 'lesson';
+      $('btnGray').classList.toggle('on', !!grayMode);
+      $('btnGray').textContent = grayMode ? '只看有效块 ✓' : '看全色';
+    }
+    if (mode === 'practice') { renderer.setFocus(null); needDraw = true; return; }   // 练习：全色，自己转
+    if (mode === 'lesson' && grayMode && demo) {
+      if (!focusMasks) focusMasks = buildFocusMasks(demo, lessonIdx);
+      applyMasksToRenderer(renderer, focusMasks, Math.min(frame, demo.tokens.length), lessonIdx);
+    } else renderer.setFocus(null);
+    needDraw = true;
+  }
+
+  /* ---------- 情况示意图：真实状态 + 关键面九宫格 + 四周侧条 ---------- */
+  var STRIP_PLACE = {
+    top: [[1, 2], [1, 3], [1, 4]],
+    bottom: [[5, 2], [5, 3], [5, 4]],
+    left: [[2, 1], [3, 1], [4, 1]],
+    right: [[2, 5], [3, 5], [4, 5]]
+  };
+  function diagHtml(dg) {
+    // 全课统一「突出块显示」：只有本课要盯的槽位保色并描蓝框，其余一律画斜线阴影。
+    // 这样第 4 课不会看起来「顶面全黄」，第 6/7 课也不会看起来「六面全好了」。
+    var litSlots = dg.frameSlots.length ? dg.frameSlots : [0, 1, 2, 3, 4, 5, 6, 7, 8];
+    var litStrip = dg.stripSlots || [0, 1, 2];
+    var byColor = dg.stripMode === 'color';   // 第 1 课：侧条只看白色
+    var h = '<div class="diag-net"><div class="diag-face">';
+    // 教材式三档：目标色＝真彩 + 蓝框（一眼数清有几条）；该盯但还没翻正＝浅色留位；
+    // 本课不管的＝斜线阴影。这样第 4 课的「点 / L / 直线」不会混成一堆彩色。
+    dg.cells.forEach(function (v, i) {
+      var inFocus = litSlots.indexOf(i) >= 0;
+      var cls, bg;
+      if (!dg.gray) { cls = 'dcell' + (v === dg.focus ? ' lit' : ''); bg = CSS[v]; }
+      else if (!inFocus) { cls = 'dcell gray'; bg = '#E6ECF5'; }
+      else if (v === dg.focus) { cls = 'dcell lit focus'; bg = CSS[v]; }
+      else { cls = 'dcell slot'; bg = '#EDF1F7'; }
+      h += '<div class="' + cls + '" style="background:' + bg + '"></div>';
+    });
+    h += '</div>';
+    Object.keys(STRIP_PLACE).forEach(function (k) {
+      dg.strips[k].forEach(function (v, i) {
+        var p = STRIP_PLACE[k][i];
+        var show = byColor ? (v === dg.focus) : (litStrip.indexOf(i) >= 0);
+        var cls, bg;
+        if (!show || (byColor && v !== dg.focus)) { cls = 'dstrip gray'; bg = '#E6ECF5'; }
+        else if (v === dg.focus) { cls = 'dstrip lit'; bg = CSS[v]; }
+        else { cls = 'dstrip slot'; bg = '#EDF1F7'; }
+        h += '<div class="' + cls + '" style="grid-area:' + p[0] + '/' + p[1] + ';background:' + bg + '"></div>';
+      });
+    });
+    return h + '</div>';
+  }
+  // 起点图：把白色底面翻过来看，真实状态生成（第 1 课应只有中心一个白点）
+  function startDiagHtml(state, lessonId) {
+    var W = Cube.C.W, n = 0, h = '<div class="lab">把魔方翻过来<br>看<b>白色底面</b></div><div class="sdgrid">';
+    for (var r = 0; r < 3; r++) for (var c = 0; c < 3; c++) {
+      var v = Cube.at(state, 'D', r, c), white = v === W;
+      if (white) n++;
+      h += '<div class="' + (white ? 'hit' : 'dim') + '" style="background:' + CSS[v] + '"></div>';
+    }
+    var cap = lessonId === 1 ? '只有中心 1 个白点' : '白色 ' + n + ' / 9 格';
+    return h + '</div><div class="cap">' + cap + '</div><div class="cap" style="color:var(--muted)">点图看底面</div>';
+  }
+  function drawCaseThumbnails() {
+    var cards = $('casegrid').children;
+    caseRenderers = [];
+    for (var i = 0; i < cards.length; i++) {
+      var cv = cards[i].querySelector('.cc-3d');
+      if (!cv) continue;
+      var d = L.buildDemo(lessonIdx, i);
+      var r = R3.createRenderer(cv, CSS);
+      // 情况卡画的是该情况起点：用同一套掩码规则取第 0 帧，和主视图起点完全一致
+      setRendererFocus(r, lessonIdx, grayMode, d.startState, buildFocusMasks(d, lessonIdx));
+      r.setView(d.diagram.view.yaw, d.diagram.view.pitch, 1.1);
+      r.render(d.startState, null);
+      caseRenderers.push(r);
+    }
+  }
+
+  /* ---------- 课程 UI ---------- */
+  function renderLevels() {
+    $('leveltabs').innerHTML = L.LEVELS.map(function (lv, i) {
+      return '<button data-level="' + i + '" class="' + (i === levelIdx ? 'on' : '') + '">' +
+        lv.name + (lv.planned ? '（规划中）' : '') + '</button>';
+    }).join('');
+    Array.prototype.forEach.call($('leveltabs').children, function (b) {
+      b.onclick = function () {
+        levelIdx = parseInt(b.dataset.level, 10);
+        renderLevels(); renderLessonList();
+      };
+    });
+  }
+  function renderLessonList() {
+    var lv = L.LEVELS[levelIdx];
+    var list = $('lessonlist'), outline = $('levelOutline');
+    if (lv.planned) {
+      list.innerHTML = '';
+      outline.hidden = false;
+      outline.innerHTML = '<b>' + lv.name + ' ' + lv.desc + '</b><br>' +
+        lv.outline.map(function (x, i) { return (i + 1) + '. ' + x; }).join('<br>') +
+        '<br><span style="color:var(--muted)">先把初级七课跟完，这些课程才有意义——本级暂未实现演示。</span>';
+    } else {
+      outline.hidden = true;
+      list.innerHTML = L.LESSONS.map(function (les, i) {
+        return '<button class="lessonbtn ' + (i === lessonIdx ? 'on' : '') + '" data-lesson="' + i + '">' +
+          '<b>' + les.badge + ' ' + les.cases.length + ' 种情况</b>' + les.name + '</button>';
+      }).join('');
+      Array.prototype.forEach.call(list.children, function (b) {
+        b.onclick = function () { selectCase(parseInt(b.dataset.lesson, 10), 0); };
+      });
+    }
+  }
+  function renderOverview() {
+    var les = L.LESSONS[lessonIdx];
+    $('formulaName').textContent = les.formulaName;
+    $('bigFormula').textContent = les.formula;
+    $('principle').textContent = '口诀：' + les.principle;
+    $('whyText').textContent = les.why;
+    $('hintLine').innerHTML = '<b>本课目标：</b>' + les.goalText + '<br><b>怎么用这个公式：</b>' + les.formulaHint;
+    $('startNote').innerHTML = '<b>本课起点 </b>' + les.startNote.replace(/^本课起点[：:]\s*/, '');
+    $('startDiag').innerHTML = startDiagHtml(L.buildDemo(lessonIdx, caseIdx).startState, les.id);
+    $('diagTip').innerHTML = '<b>只看有效块：</b>' + les.focusNote +
+      '<br>' + les.diagram.hint + ' 每张卡左边是真实起始状态，右边是俯视图（彩色＝本课要盯的块，蓝框＝关键位置，斜线阴影＝本课不管的块），四周小条是侧面颜色。本课重点看：' + les.diagram.focusHint + '。' +
+      '<div class="keylegend"><span><i class="sw sw-color"></i>彩色＝已拼好 / 本课要处理</span>' +
+      '<span><i class="sw sw-focus"></i>蓝框＝要盯的那一块</span>' +
+      '<span><i class="sw sw-hatch"></i>斜线＝本课不管，而且真的还没拼好</span></div>';
+  }
+  function renderCases() {
+    var les = L.LESSONS[lessonIdx];
+    $('casegrid').innerHTML = les.cases.map(function (c, i) {
+      var d = L.buildDemo(lessonIdx, i);
+      return '<div class="casecard' + (i === caseIdx ? ' on' : '') + '" data-case="' + i +
+        '" role="button" tabindex="0" aria-pressed="' + (i === caseIdx) + '">' +
+        '<div class="cc-title"><span>情况 ' + (i + 1) + '</span><span class="tag">' +
+        (i === caseIdx ? '正在演示' : '点我切换') + '</span></div>' +
+        '<div class="cc-pics"><canvas class="cc-3d"></canvas>' + diagHtml(d.diagram) + '</div>' +
+        '<div class="cc-alg"><i>这一步做 </i>' + d.tokens.join(' ') + '</div>' +
+        '<div class="cc-spot">' + c.spot + '</div></div>';
+    }).join('');
+    Array.prototype.forEach.call($('casegrid').children, function (b) {
+      var pick = function () { selectCase(lessonIdx, parseInt(b.dataset.case, 10)); };
+      b.onclick = pick;
+      b.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } };
+    });
+    drawCaseThumbnails();
+    $('caseIntro').innerHTML = '<b>' + les.cases[caseIdx].title + '：</b>' + les.cases[caseIdx].intro;
+    $('turnListTitle').textContent = les.cases[caseIdx].title + ' 共 ' +
+      L.buildDemo(lessonIdx, caseIdx).tokens.length + ' 转';
+    renderTurnList();
+  }
+  // 只滚列表容器，绝不调用 scrollIntoView（那会连带滚动整页，把固定按钮挤走）
+  function keepRowVisible(wrap, row) {
+    if (!row || wrap.scrollHeight <= wrap.clientHeight) return;
+    var top = row.offsetTop;
+    if (top < wrap.scrollTop) wrap.scrollTop = top;
+    else if (top + row.offsetHeight > wrap.scrollTop + wrap.clientHeight)
+      wrap.scrollTop = top + row.offsetHeight - wrap.clientHeight;
+  }
+  function renderTurnList() {
+    var ts = turns();
+    $('listwrapLesson').innerHTML = ts.map(function (t, i) {
+      return '<div class="row" data-turn="' + i + '"><span class="n">' + (i + 1) + '</span>' +
+        '<span class="s" style="min-width:44px">' + t + '</span>' +
+        '<span class="note">' + noteAt(i) + '</span></div>';
+    }).join('');
+    Array.prototype.forEach.call($('listwrapLesson').children, function (r) {
+      r.onclick = function () { goToTurn(parseInt(r.dataset.turn, 10)); };
+    });
+    highlightTurnRow();
+  }
+  function highlightTurnRow() {
+    var wrap = $('listwrapLesson'), rows = wrap.children;
+    for (var i = 0; i < rows.length; i++) rows[i].classList.toggle('cur', i === frame);
+    keepRowVisible(wrap, rows[frame]);
+  }
+
+  /* ---------- 实战 UI ---------- */
+  function renderStats(algText, ms) {
+    $('statbar').innerHTML = [
+      '<span class="pill">打乱 <b>' + algText.split(' ').length + '</b> 步</span>',
+      '<span class="pill">教学单元 <b>' + steps.length + '</b> 个</span>',
+      '<span class="pill">总转动 <b>' + result.stats.moves + '</b> 步</span>',
+      '<span class="pill">求解 <b>' + ms + 'ms</b></span>',
+      '<span class="pill">搜索节点 <b>' + result.stats.nodes.toLocaleString() + '</b></span>',
+      '<span class="pill ' + (result.solved ? 'good' : '') + '">自检：<b>' + (result.solved ? '✓ 六面复原' : '✗ 未复原') + '</b></span>'
+    ].join('');
+  }
+  function renderStageNav() {
+    $('stagenav').innerHTML = result.STAGE_META.map(function (m) {
+      var st = result.stages[m.id - 1], n = st ? st.units.length : 0;
+      return '<button class="chip" data-stage="' + m.id + '" title="' + m.goal.replace(/"/g, '') + '">' +
+        m.id + '. ' + m.short + '<span>' + (n === 0 ? '自动完成' : n + ' 段') + '</span></button>';
+    }).join('');
+    Array.prototype.forEach.call($('stagenav').children, function (b) {
+      b.onclick = function () {
+        var id = parseInt(b.dataset.stage, 10), k = -1;
+        for (var i = 0; i < steps.length; i++) if (steps[i].stage === id) { k = i; break; }
+        goTo(k >= 0 ? k : steps.length - 1);
+      };
+    });
+  }
+  function renderStepCard() {
+    var u = curUnit(); if (!u || !result) return;
+    var m = result.STAGE_META[u.stage - 1];
+    var dp = u.progressAfter >= 0 && u.progressBefore >= 0 && u.progressAfter > u.progressBefore;
+    var prog = '<span class="progress">' + m.short + ' ' + Math.max(0, u.progressBefore) + ' → ' + Math.max(0, u.progressAfter) + '</span>';
+    $('stepcard').innerHTML =
+      '<div class="steptop"><span class="stagename">阶段 ' + u.stage + ' / 7 ' + u.stageName + '</span>' +
+      '<span class="stepno">第 ' + (cur + 1) + ' / ' + steps.length + ' 个教学单元</span></div>' +
+      '<p class="formula">' + u.notation + '</p>' +
+      '<p class="explain">' + u.text + (dp ? prog : '') + '<br><span style="color:var(--muted);font-size:12px">' + u.label + '</span></p>' +
+      '<div class="goal"><b>本阶段目标：</b>' + m.goal + '<br><b>要点：</b>' + m.hint + '</div>';
+    Array.prototype.forEach.call($('stagenav').children, function (b) {
+      b.classList.toggle('cur', parseInt(b.dataset.stage, 10) === u.stage);
+    });
+    var wrap = $('listwrap'), rows = wrap.children;
+    for (var i = 0; i < rows.length; i++) rows[i].classList.toggle('cur', i === cur);
+    keepRowVisible(wrap, rows[cur]);
+  }
+  function renderSolveList() {
+    $('listwrap').innerHTML = steps.map(function (u, i) {
+      return '<div class="row" data-i="' + i + '"><span class="n">' + (i + 1) + '</span>' +
+        '<span class="s">' + result.STAGE_META[u.stage - 1].short + '</span>' +
+        '<span class="m">' + u.notation + '</span></div>';
+    }).join('');
+    Array.prototype.forEach.call($('listwrap').children, function (r) {
+      r.onclick = function () { goTo(parseInt(r.dataset.i, 10)); };
+    });
+  }
+
+  /* ---------- 当前帧信息 ---------- */
+  function renderFrame() {
+    if (mode === 'practice') {
+      var n = practiceTokens.length;
+      var cur = stateAt(frame);
+      var solved = cur ? Cube.isSolved(cur) : false;
+      $('frameNow').textContent = n ? practiceTokens[n - 1] : '—';
+      $('frameDesc').innerHTML = solved
+        ? '🎉 <b>魔方已复原！</b> 你可以「新打乱」再来一局'
+        : ('个人练习：自己转，' + (n ? '已做 <b>' + n + '</b> 步' : '还没动手') + '，目标是六面同色');
+      $('turnCounter').textContent = '第 ' + n + ' 步';
+      $('vpBadge').innerHTML = n ? ('最后一步 <b>' + practiceTokens[n - 1] + '</b>') : '拖拽可自由旋转视角';
+      $('turnFill').style.width = '0%';
+      markFace(null);
+      return;
+    }
+    var ts = turns(), n = ts.length;
+    var t = anim ? anim.token : null;
+    var isY = t && t.charAt(0) === 'y';
+    $('frameNow').textContent = t ? (anim && anim.backTo !== null ? '↶ ' + t : t) : '—';
+    var head;
+    var caseHead = (mode === 'lesson' && demo)
+      ? '<b>' + demo.title + '</b> 共 ' + n + ' 转' : '本段共 ' + n + ' 转';
+    if (anim && anim.backTo !== null)
+      head = '正在倒回 <b>' + t.charAt(0) + '</b> 面 连续转动中';
+    else if (isY) head = '<b>整体转魔方</b>（不是转层）——把目标槽位转到右前，公式结束会转回原握法';
+    else if (t) head = '正在拧 <b>' + t.charAt(0) + '</b> 面 第 ' + (frame + 1) + ' / ' + n + ' 转 该层连续转动中';
+    else if (frame >= n) head = caseHead + '<br>本段已完成，可以重看或换一种情况';
+    else head = caseHead + '<br><span style="color:#3F4A5C">下一转 <b>' + ts[frame] + '</b>：' + noteAt(frame) + '</span>';
+    if (mode === 'lesson' && t && !(anim && anim.backTo !== null))
+      head += '<br><span style="color:#3F4A5C"><b>' + t + '</b> ' + noteAt(frame) + '</span>';
+    $('frameDesc').innerHTML = head;
+    $('turnFill').style.width = anim ? (ease(anim.t) * 100).toFixed(1) + '%' : '0%';
+    $('turnCounter').textContent = '第 ' + frame + ' / ' + n + ' 转';
+    $('vpBadge').innerHTML = t ? (isY ? '整体旋转 <b>y</b>' : '正在拧 <b>' + t.charAt(0) + '</b> 面') : '拖拽可自由旋转视角';
+    markFace(t);
+    if (mode === 'lesson') highlightTurnRow();
+  }
+
+  /* ---------- 播放状态机 ---------- */
+  // backTo 非空表示这是「退一转」：用反向记号把当前状态连续转回去，和前进一样有动画
+  function startTurn(token, backTo) {
+    anim = { from: stateAt(frame), token: token, spec: R3.moveSpec(token), t: 0,
+             backTo: (backTo === undefined ? null : backTo),
+             dur: BASE_TURN * (token.indexOf('2') > 0 ? 1.45 : 1) / spd() };
+    renderFrame(); needDraw = true;
+  }
+  function commitTurn() {
+    var oneShot = once, bt = anim ? anim.backTo : null;
+    anim = null; once = false;
+    frame = (bt === null) ? frame + 1 : bt;
+    gap = TURN_GAP / spd();
+    setStatic(stateAt(frame));
+    applyFocus();        // 有效块掩码跟着贴纸一起转到新帧，颜色/斜线不会在落位时突变
+    renderFrame();
+    if (mode === 'practice') { renderPracStatus(); renderPracList(); }
+    checkAch();   // 课程演示终点成就埋点
+    if (oneShot) { playing = false; syncPlayBtn(); }
+  }
+  function endOfUnit() {
+    if (mode === 'lesson') { loopGap = LOOP_GAP / spd(); return; }   // 课程：始终循环当前情况，练习到会
+    if (autoAdvance) {
+      if (cur < steps.length - 1) { goTo(cur + 1); return; }
+      playing = false; syncPlayBtn(); return;
+    }
+    if (loopStep) { loopGap = LOOP_GAP / spd(); return; }
+    playing = false; syncPlayBtn();
+  }
+  function advance(dt) {
+    if (anim) {
+      if (!playing) return;
+      anim.t += dt / anim.dur;
+      if (anim.t >= 1) { anim.t = 1; commitTurn(); }
+      needDraw = true; return;
+    }
+    if (!playing) return;
+    if (gap > 0) { gap -= dt; return; }
+    if (loopGap > 0) {
+      loopGap -= dt;
+      if (loopGap <= 0) { frame = 0; setStatic(stateAt(0)); applyFocus(); renderFrame(); gap = TURN_GAP / spd(); }
+      return;
+    }
+    if (frame >= turns().length) { endOfUnit(); return; }
+    startTurn(turns()[frame]);
+  }
+  function draw() {
+    if (anim) renderer.render(null, { from: anim.from, spec: anim.spec, t: ease(anim.t) });
+    else renderer.render(stateAt(frame), null);
+  }
+  function loop(ts) {
+    var dt = lastTs ? Math.min(64, ts - lastTs) : 16;
+    lastTs = ts;
+    advance(dt);
+    if (needDraw || anim || playing) { draw(); needDraw = false; }
+    requestAnimationFrame(loop);
+  }
+
+  /* ---------- 导航 ---------- */
+  function goTo(k) {
+    cur = Math.max(0, Math.min(steps.length - 1, k));
+    resetPlay();
+    setStatic(stateAt(0));
+    renderStepCard(); renderFrame();
+  }
+  function selectCase(li, ci) {
+    lessonIdx = Math.max(0, Math.min(L.LESSONS.length - 1, li));
+    var les = L.LESSONS[lessonIdx];
+    caseIdx = Math.max(0, Math.min(les.cases.length - 1, ci));
+    grayMode = true;   // 全课默认「突出块显示」：已完成与目标保色，其余打上斜线
+    demo = L.buildDemo(lessonIdx, caseIdx);
+    focusMasks = null;                 // 换情况就按新公式重新逆推掩码
+    resetPlay();
+    setStatic(demo.states[0]);
+    applyFocus();
+    renderLevels(); renderLessonList(); renderOverview(); renderCases(); renderFrame();
+    var grip = '<b>握法：</b>白色在下（D）、绿色朝前（F）、黄色在上（U），全程不换握法。<br>' +
+      '<b>只看有效块：</b>' + L.LESSONS[lessonIdx].focusNote +
+      ' 点视图右上角「只看有效块」可切回全色对照。<br>';
+    if (demo.goal === 'cross') {
+      grip += '<b>这一课的终点不是复原：</b>起点是真实打乱的魔方（白色底面只有中心是白色），跟着做完得到的是' +
+        '<b>白十字</b>，四个角和其它块都还没做——那正是后面几课的内容。<br>';
+    } else if (demo.goal === 'stage7') {
+      grip += '<b>这一课才轮到六面复原：</b>前面六课的成果都已经拼好，起点只差四条顶棱的位置；跟着做完六个面全部复原。<br>';
+    } else {
+      grip += '<b>这一课的终点不是六面复原：</b>' + les.goalText +
+        ' 已经拼好的块保留颜色，本课新拼好的那一块描蓝框；<b>还没学的块是真的乱着</b>，只是画上了斜线阴影，' +
+        '点「看全色」就能看到它们其实并没有拼好。所以对比起点和终点，一眼能看出这一课多做了哪一块。<br>';
+    }
+    grip += '<b>只看有效块怎么读：</b>彩色＝已经拼好的和本课要处理的块，蓝框＝要盯的位置，斜线阴影＝本课不管、也真的还没拼好的块。' +
+      ' 点视图右上角「只看有效块」可切回全色对照。<br>' +
+      '<b>怎么练：</b>先在上面几张情况图里找最像自己魔方的一张，再用「单转下一格」一转一转跟，或点播放连播；' +
+      '七课的演示都由真实魔方状态生成，公式不会教错。';
+    $('grip').innerHTML = grip;
+  }
+  function goToTurn(k) {
+    resetPlay();
+    frame = Math.max(0, Math.min(turns().length, k));
+    playing = false; syncPlayBtn();
+    setStatic(stateAt(frame));
+    applyFocus();        // 跳到任意一格也要用那一帧的掩码
+    renderFrame();
+    if (mode === 'practice') { renderPracStatus(); renderPracList(); }
+    else renderStepCard();
+  }
+  function stepTurn(dir) {
+    if (dir < 0) {
+      if (mode === 'practice') { pacUndo(); return; }   // 练习：退一步＝撤销最后一步
+      playing = false; once = false; syncPlayBtn();
+      if (anim) { anim = null; setStatic(stateAt(frame)); renderFrame(); needDraw = true; return; }
+      if (frame > 0) {
+        // 取上一转的反向记号，从当前状态连续转回上一格（不再是瞬间跳变）
+        var inv = invertTok(turns()[frame - 1]);
+        once = true; playing = true; syncPlayBtn();
+        startTurn(inv, frame - 1);
+        needDraw = true; return;
+      }
+      if (mode === 'solve' && cur > 0) {
+        goTo(cur - 1); frame = turns().length;
+        setStatic(stateAt(frame)); renderFrame(); needDraw = true;
+      }
+      return;
+    }
+    if (anim) { anim.t = 1; commitTurn(); playing = false; syncPlayBtn(); needDraw = true; return; }
+    if (frame >= turns().length) {
+      if (mode === 'solve' && cur < steps.length - 1) goTo(cur + 1);
+      else { frame = 0; setStatic(stateAt(0)); applyFocus(); renderFrame(); }   // 课程：从头再练一遍
+    }
+    once = true; playing = true; syncPlayBtn();
+    startTurn(turns()[frame]);
+  }
+  function load(alg) {
+    showError('');
+    try {
+      var seq = Cube.parseAlg(alg);
+      if (!seq.length) throw new Error('打乱公式为空');
+      var start = Cube.applySeq(Cube.solvedState(), seq);
+      if (Cube.isSolved(start)) throw new Error('这个公式没有打乱魔方');
+      var t0 = performance.now();
+      result = Cube.solve(start);
+      var ms = Math.round(performance.now() - t0);
+      steps = result.steps;
+      if (!result.solved) throw new Error('自检未通过：解法没有复原魔方');
+      if (!steps.length) throw new Error('没有生成教学步骤');
+      renderStats(Cube.algText(seq), ms);
+      renderStageNav(); renderSolveList();
+      playing = true; syncPlayBtn();
+      goTo(0);
+      $('grip').innerHTML = '<b>握法：</b>白色在下、绿色朝前，全程不换握法；公式里的小写 <code>y</code> 表示整体转魔方。<br>' +
+        '<b>这是实战模式：</b>把任意打乱状态自动拆成七阶段层先法，每一步都能单转慢放、上一步回看。';
+    } catch (e) {
+      showError('求解失败：' + e.message);
+      playing = false; syncPlayBtn();
+    }
+  }
+  function switchMode(m) {
+    mode = m;
+    noteModeVisit(m);   // 三模式全体验成就埋点
+    $('modeLesson').classList.toggle('on', m === 'lesson');
+    $('modeSolve').classList.toggle('on', m === 'solve');
+    $('modePractice').classList.toggle('on', m === 'practice');
+    $('lessonPanel').hidden = m !== 'lesson';
+    $('solvePanel').hidden = m !== 'solve';
+    $('practicePanel').hidden = m !== 'practice';
+    $('inputbar').hidden = m !== 'solve';
+    // 个人练习没有「上一段 / 下一段」概念，把这两个分段按钮藏起来
+    $('btnPrev').hidden = m === 'practice';
+    $('btnNext').hidden = m === 'practice';
+    if (m === 'lesson') {
+      $('modeHint').textContent = '初级七课：一课只多拼好一类块，没学的块仍是乱的';
+      var caseTotal = L.LESSONS.reduce(function (a, x) { return a + x.cases.length; }, 0);
+      $('statbar').innerHTML = '<span class="pill">模式 <b>课程学习</b></span>' +
+        '<span class="pill">初级 <b>' + L.LESSONS.length + '</b> 课</span>' +
+        '<span class="pill">演示情况 <b>' + caseTotal + '</b> 种</span>' +
+        '<span class="pill good">公式自检 <b>✓ ' + caseTotal + '/' + caseTotal + ' 达标</b></span>' +
+        '<span class="pill">达标口径 <b>逐课阶段目标 / 没学的块仍乱</b></span>';
+      selectCase(lessonIdx, caseIdx);
+    } else if (m === 'solve') {
+      $('modeHint').textContent = '任意打乱 → 自动七阶段层先法 → 逐转慢放';
+      applyFocus();   // 实战模式：恢复全色
+      if (!result) load($('scramble').value); else { playing = true; syncPlayBtn(); goTo(0); }
+    } else {   // practice
+      $('modeHint').textContent = '随机打乱 → 你自己转 → 卡住再看答案；练手感不背公式';
+      applyFocus();   // 练习模式：全色
+      if (!practiceStart) { if (!pracRestore()) pracNew(); }
+      else { setStatic(practiceStart); applyFocus(); renderPracStatus(); renderPracList(); renderFrame(); }
+      // 首次进入自动弹出两步操作引导（① 符号说明 ② 操作栏），看过一次后不再弹
+      try { if (!coachOn && !localStorage.getItem('cubePracticeCoachSeen')) openPracticeCoach(); } catch (e) {}
+    }
+    playing = (m !== 'practice'); syncPlayBtn(); needDraw = true;
+  }
+
+  /* ---------- 个人练习 ---------- */
+  function pracNew() {
+    var n = parseInt($('pracDifficulty') ? $('pracDifficulty').value : '20', 10) || 20;
+    var scr = Cube.randomScramble(n, (Date.now() >>> 0) ^ (Math.random() * 0x7fffffff | 0));
+    practiceScrambleAlg = Cube.algText(scr);
+    practiceStart = Cube.applySeq(Cube.solvedState(), scr);
+    practiceTokens = []; frame = 0;
+    playing = false; syncPlayBtn();
+    setStatic(practiceStart); applyFocus();
+    renderPracStatus(); renderPracList(); renderFrame();
+  }
+  function pracReset() {          // 回到这一局的初始打乱状态
+    if (!practiceStart) { pracNew(); return; }
+    practiceTokens = []; frame = 0;
+    playing = false; syncPlayBtn();
+    setStatic(practiceStart); applyFocus();
+    renderPracStatus(); renderPracList(); renderFrame();
+  }
+  function userMove(T) {
+    if (anim) { anim.t = 1; commitTurn(); }    // 先收尾任何在飞的转动
+    if (frame < practiceTokens.length) practiceTokens = practiceTokens.slice(0, frame);  // 丢弃 redo 尾巴
+    practiceTokens.push(T);
+    playing = true; once = true; syncPlayBtn();   // playing=true 让连续转动动画能跑完；commit 后 once 会把它停住
+    frame = practiceTokens.length - 1;
+    startTurn(T);   // 从「当前状态」连续拧到「加这一转之后」，颜色全程跟随贴纸走
+  }
+  function pacUndo() {          // 个人练习的「退一步」：真把最后一步从自己的转法里拿掉
+    if (anim) { anim.t = 1; commitTurn(); }
+    if (practiceTokens.length === 0) return;
+    practiceTokens.pop();
+    frame = practiceTokens.length;
+    playing = false; once = false; syncPlayBtn();
+    setStatic(stateAt(frame)); applyFocus();
+    renderFrame(); renderPracStatus(); renderPracList();
+  }
+  function pracFacesDone(s) {
+    if (!s) return 0;
+    var done = 0;
+    Cube.FACES.forEach(function (f, fi) {
+      var c = s[fi * 9];
+      for (var i = 1; i < 9; i++) if (s[fi * 9 + i] !== c) return;
+      done++;
+    });
+    return done;
+  }
+  function renderPracStatus() {
+    var n = practiceTokens.length, s = stateAt(frame), solved = s ? Cube.isSolved(s) : false;
+    if (!solved) pracCounted = false;
+    if (solved && practiceStart && n > 0) notePracticeSolve(n);   // 复原成就埋点
+    $('statbar').innerHTML = '<span class="pill">模式 <b>个人练习</b></span>' +
+      '<span class="pill">难度 <b>' + (parseInt($('pracDifficulty').value, 10) || 20) + ' 步</b></span>' +
+      '<span class="pill">已转 <b>' + n + '</b> 步</span>' +
+      '<span class="pill ' + (solved ? 'good' : '') + '">' + (solved ? '✓ 已复原' : '未复原') + '</span>';
+    var el = $('pracStatus');
+    if (!practiceStart) { el.className = 'prac-status'; el.textContent = '点「新打乱」开始'; return; }
+    if (solved) {
+      el.className = 'prac-status good';
+      el.innerHTML = '🎉 <b>魔方复原了！</b> 这一局你用了 <b>' + n + '</b> 步。点「新打乱」再来一局。';
+    } else if (n === 0) {
+      el.className = 'prac-status';
+      el.innerHTML = '魔方已打乱，<b>还没动手</b>。点下面的转法键，自己把它转回六面同色。';
+    } else {
+      var done = pracFacesDone(s);
+      el.className = 'prac-status warn';
+      el.innerHTML = '还差一点：6 个面里已经有 <b>' + done + '</b> 个整面同色，继续转，目标是 6 / 6。';
+    }
+  }
+  function renderPracList() {
+    if (!practiceTokens.length) {
+      $('listwrapPrac').innerHTML = '<div class="empty">还没有转过——转一步就会记录在这里</div>';
+      return;
+    }
+    $('listwrapPrac').innerHTML = practiceTokens.map(function (t, i) {
+      var tag = i === frame - 1 ? '← 当前' : (i < frame ? '已做' : '');
+      return '<div class="row" data-i="' + i + '"><span class="n">' + (i + 1) + '</span>' +
+        '<span class="s" style="min-width:44px">' + t + '</span><span class="note">' + tag + '</span></div>';
+    }).join('');
+    Array.prototype.forEach.call($('listwrapPrac').children, function (r) {
+      r.onclick = function () { goToTurn(parseInt(r.dataset.i, 10) + 1); };
+    });
+  }
+  function pracCheck() {
+    var s = stateAt(frame);
+    if (!s) { renderPracStatus(); return; }
+    if (Cube.isSolved(s)) renderPracStatus();
+    else {
+      var el = $('pracStatus'); el.className = 'prac-status warn';
+      el.innerHTML = '还没复原：6 个面里只有 <b>' + pracFacesDone(s) + '</b> 个整面同色。对照左右的小图，继续转。';
+    }
+  }
+  function pracAnswer() {
+    if (!practiceScrambleAlg) pracNew();
+    switchMode('solve');
+    $('scramble').value = practiceScrambleAlg;
+    load(practiceScrambleAlg);   // 用同一个打乱做「标准答案」，左上自动拆成七阶段，可逐转慢放
+  }
+
+  /* ---------- 视角交互 ---------- */
+  var canvas = $('cube3d'), drag = null;
+  canvas.addEventListener('pointerdown', function (e) {
+    drag = { x: e.clientX, y: e.clientY }; canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener('pointermove', function (e) {
+    if (!drag) return;
+    var v = renderer.getView();
+    renderer.setView(v.yaw + (e.clientX - drag.x) * 0.55, v.pitch + (e.clientY - drag.y) * 0.45, null);
+    drag = { x: e.clientX, y: e.clientY };
+    $('vpBadge').innerHTML = '视角 <b>' + Math.round(renderer.getView().yaw) + '° / ' + Math.round(renderer.getView().pitch) + '°</b>';
+    needDraw = true;
+  });
+  canvas.addEventListener('pointerup', function () { drag = null; });
+  canvas.addEventListener('pointercancel', function () { drag = null; });
+  canvas.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    var v = renderer.getView();
+    renderer.setView(null, null, v.zoom * (e.deltaY > 0 ? 0.92 : 1.08));
+    needDraw = true;
+  }, { passive: false });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-view]'), function (b) {
+    b.onclick = function () {
+      var v = VIEWS[b.dataset.view];
+      renderer.setView(v.yaw, v.pitch, v.zoom);
+      $('vpBadge').innerHTML = v.label; needDraw = true;
+    };
+  });
+  $('btnGray').onclick = function () { grayMode = !grayMode; applyFocus(); };
+  window.addEventListener('resize', function () { renderer.resize(); needDraw = true; drawCaseThumbnails(); });
+  if (window.ResizeObserver) new ResizeObserver(function () { renderer.resize(); needDraw = true; }).observe(canvas);
+
+  /* ---------- 控件 ---------- */  var showWhiteBottom = function () {
+    var v = VIEWS.bottom;
+    renderer.setView(v.yaw, v.pitch, v.zoom);
+    $('vpBadge').innerHTML = v.label + ' <b>只有中心是白色</b>';
+    needDraw = true;
+  };
+  $('startDiag').onclick = showWhiteBottom;
+  $('startDiag').onkeydown = function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showWhiteBottom(); }
+  };
+  $('modeLesson').onclick = function () { switchMode('lesson'); };
+  $('modeSolve').onclick = function () { switchMode('solve'); };
+  $('btnLoad').onclick = function () { load($('scramble').value); };
+  $('scramble').addEventListener('keydown', function (e) { if (e.key === 'Enter') load($('scramble').value); });
+  $('btnRandom').onclick = function () {
+    var a = Cube.algText(Cube.randomScramble(20, Date.now() >>> 0));
+    $('scramble').value = a; load(a);
+  };
+  Array.prototype.forEach.call(document.querySelectorAll('.samples button'), function (b) {
+    b.onclick = function () { $('scramble').value = b.dataset.alg; load(b.dataset.alg); };
+  });
+  $('btnPrev').onclick = function () { if (mode === 'solve') goTo(cur - 1); else selectCase(lessonIdx - 1, 0); };
+  $('btnNext').onclick = function () { if (mode === 'solve') goTo(cur + 1); else selectCase(lessonIdx + 1, 0); };
+  $('btnReset').onclick = function () {
+    if (mode === 'practice') { pracReset(); return; }
+    playing = true; syncPlayBtn();
+    if (mode === 'lesson') selectCase(lessonIdx, caseIdx); else goTo(0);
+  };
+  $('btnTurnPrev').onclick = function () { stepTurn(-1); };
+  $('btnTurnNext').onclick = function () { stepTurn(1); };
+  $('modePractice').onclick = function () { switchMode('practice'); };
+
+  /* ---------- 个人练习：转法按键区 ---------- */
+  (function buildTurnPad() {
+    var FACES = ['R', 'U', 'F', 'L', 'D', 'B'], SUF = ['', "'", '2'];
+    $('turnpad').innerHTML = FACES.map(function (f) {
+      return '<div class="tp-row"><span class="tp-face">' + f + '</span>' +
+        SUF.map(function (s) {
+          var t = f + s;
+          return '<button class="tp-btn" data-tok="' + t + '">' + t + '</button>';
+        }).join('') + '</div>';
+    }).join('');
+    $('turnpad').addEventListener('click', function (e) {
+      var b = e.target.closest && e.target.closest('.tp-btn');
+      if (!b) return;
+      if (mode !== 'practice') switchMode('practice');
+      userMove(b.dataset.tok);
+    });
+  })();
+  $('pracNew').onclick = function () { pracNew(); };
+  $('pracReset').onclick = function () { pracReset(); };
+  $('pracUndo').onclick = function () { stepTurn(-1); };
+  $('pracCheck').onclick = function () { pracCheck(); };
+  $('pracAnswer').onclick = function () { pracAnswer(); };
+  $('pracHelp').onclick = function () { openPracticeCoach(); };
+  $('btnPlay').onclick = function () { playing = !playing; once = false; syncPlayBtn(); needDraw = true; };
+  $('btnLoop').onclick = function () {
+    loopStep = !loopStep;
+    $('btnLoop').classList.toggle('on', loopStep);
+    if (loopStep && autoAdvance) { autoAdvance = false; $('btnAuto').classList.remove('on'); }
+    loopGap = 0; needDraw = true;
+  };
+  $('btnAuto').onclick = function () {
+    autoAdvance = !autoAdvance;
+    $('btnAuto').classList.toggle('on', autoAdvance);
+    if (autoAdvance) { loopStep = false; $('btnLoop').classList.remove('on'); loopGap = 0; playing = true; syncPlayBtn(); }
+    needDraw = true;
+  };
+  $('speed').oninput = function () {
+    speedIdx = parseInt(this.value, 10);
+    $('speedVal').textContent = SPEEDS[speedIdx] + '×';
+  };
+  document.addEventListener('keydown', function (e) {
+    if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+    if (mode === 'practice') {
+      var pk = e.key.toLowerCase();
+      if ('rufldb'.indexOf(pk) >= 0) { e.preventDefault(); userMove(pk.toUpperCase() + (e.shiftKey ? "'" : '')); return; }
+    }
+    if (e.code === 'Space') { e.preventDefault(); $('btnPlay').click(); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); stepTurn(1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); stepTurn(-1); }
+    else if (e.key === '[') $('btnPrev').click();
+    else if (e.key === ']') $('btnNext').click();
+  });
+
+  /* ---------- 符号说明：每个记号配一个会自动播放转动示意的小魔方 ---------- */
+  var NOTATIONS = [
+    { sym: 'R',  token: 'R',  name: '右面',       desc: '正对右面看，顺时针转 90°。公式里最常用的一转。' },
+    { sym: 'U',  token: 'U',  name: '顶面 / 上层', desc: '从正上方往下看，顺时针转 90°。只动最上面那一层。' },
+    { sym: 'F',  token: 'F',  name: '前面',       desc: '正对自己胸口这一面，顺时针转 90°。' },
+    { sym: 'L',  token: 'L',  name: '左面',       desc: '正对左面看，顺时针转 90°。' },
+    { sym: 'B',  token: 'B',  name: '后面',       desc: '正对魔方背面看，顺时针转 90°；从正面看方向是反的。' },
+    { sym: 'D',  token: 'D',  name: '底面 / 下层', desc: '从底下往上看，顺时针转 90°。只动最下面那一层。' },
+    { sym: "R'", token: "R'", name: '一撇 = 反方向', desc: '字母右上角一撇表示逆时针 90°。R′ 就是 R 的反方向。' },
+    { sym: 'R2', token: 'R2', name: '数字 2 = 半圈', desc: '这一面转 180°（两格）。第 1 课把白棱翻到底层用的就是它。' },
+    { sym: 'y',  token: 'y',  name: '整体转魔方',   desc: '整个魔方水平转一下换握法，不是拧某一层；公式里用来把目标槽位转到顺手的位置。' }
+  ];
+  var notationEl = $('notation'), notationState = Cube.solvedState();
+  var notationRs = [], notationRAF = null, notationT0 = 0, notationOpen = false;
+  (function buildNotation() {
+    var grid = $('notationGrid');
+    grid.innerHTML = NOTATIONS.map(function (n, i) {
+      return '<div class="notation-item" data-i="' + i + '">' +
+        '<canvas class="notation-canvas"></canvas>' +
+        '<div class="notation-txt"><div class="sym">' + n.sym + '</div>' +
+        '<div class="nm">' + n.name + '</div><div class="ds">' + n.desc + '</div></div></div>';
+    }).join('');
+    Array.prototype.forEach.call(grid.children, function (item) {
+      var i = parseInt(item.dataset.i, 10);
+      var r = R3.createRenderer(item.querySelector('canvas'), CSS);
+      r.setView(-34, 26, 1.02);
+      var o = { r: r, spec: R3.moveSpec(NOTATIONS[i].token), phase: i * 0.13, hit: 0, drawn: 0 };
+      notationRs.push(o);
+      item.onclick = function () { o.hit = performance.now(); };   // 点任意一条立刻重播
+    });
+  })();
+  function notationFrame(ts) {
+    if (!notationOpen) return;
+    if (!notationT0) notationT0 = ts;
+    var el = ts - notationT0;
+    notationRs.forEach(function (o) {
+      var local = ((el / 2600) + o.phase) % 1;
+      if (o.hit > 0) {
+        var dt = ts - o.hit;
+        if (dt > 1500) o.hit = 0; else local = (dt / 1500) % 1;
+      }
+      var t = local < 0.72 ? ease(Math.max(0, Math.min(1, local / 0.72))) : 1;
+      var st = o.r.render(notationState, { from: notationState, spec: o.spec, t: t });
+      o.drawn = st.drawn;
+    });
+    notationRAF = requestAnimationFrame(notationFrame);
+  }
+  function openNotation() {
+    notationOpen = true; notationT0 = 0; notationEl.hidden = false;
+    notationRs.forEach(function (o) { o.r.resize(); });
+    if (!notationRAF) notationRAF = requestAnimationFrame(notationFrame);
+  }
+  function closeNotation() {
+    notationOpen = false; notationEl.hidden = true;
+    if (notationRAF) { cancelAnimationFrame(notationRAF); notationRAF = null; }
+  }
+  $('btnNotation').onclick = openNotation;
+  $('notationClose').onclick = closeNotation;
+  notationEl.addEventListener('click', function (e) { if (e.target === notationEl) closeNotation(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && notationOpen) closeNotation();
+  });
+
+  /* ---------- 登录 / 成就（v1.4.0）：未登录可玩，保存成就·进度·好友PK 需登录 ---------- */
+  var AC = window.AuthClient || null;
+  var ACHS = [
+    { id: 'first-solve', t: '🎉 初次复原', d: '在「个人练习」里把一道打乱题转回六面同色' },
+    { id: 'solve-20',    t: '⚡ 进阶复原', d: '完成一局 20 步难度的复原' },
+    { id: 'solve-35',    t: '🏆 高手复原', d: '完成一局 35 步难度的复原' },
+    { id: 'five-solves', t: '✋ 熟能生巧', d: '累计复原 5 局' },
+    { id: 'lesson-1',    t: '📖 第一课', d: '看到第 1 课演示终点（底面十字拼好）' },
+    { id: 'lesson-7',    t: '🎓 七课通关', d: '看到第 7 课演示终点（六面复原）' },
+    { id: 'explorer',    t: '🧭 三模式全体验', d: '课程学习 / 实战求解 / 个人练习 都用过' }
+  ];
+  function achKey() {
+    var u = AC && AC.store.getUser();
+    return 'cubeAch_' + (u && u.id ? u.id : 'guest');
+  }
+  function loadAchState() { try { return JSON.parse(localStorage.getItem(achKey()) || '{}'); } catch (e) { return {}; } }
+  var achState = loadAchState();
+  function saveAch() { try { localStorage.setItem(achKey(), JSON.stringify(achState)); } catch (e) {} }
+  function award(id) {
+    if (!ACHS.some(function (a) { return a.id === id; })) return;
+    if (!achState[id]) { achState[id] = Math.floor(Date.now() / 1000); saveAch(); renderAch(); }
+  }
+  function renderAch() {
+    var el = $('achList'); if (!el) return;
+    el.innerHTML = ACHS.map(function (a) {
+      var on = !!achState[a.id];
+      return '<div class="ach-item' + (on ? ' on' : '') + '"><div class="at">' + a.t + '</div>' +
+        '<div class="ad">' + a.d + '</div><div class="ast">' + (on ? '✓ 已解锁' : '未解锁') + '</div></div>';
+    }).join('') +
+    '<div style="grid-column:1/-1;font-size:12px;color:var(--muted)">累计复原 <b>' + (achState.__solves | 0) + '</b> 局</div>';
+  }
+  // 练习复原埋点：同一段连续保持复原只记一次，打破后重解再记
+  var pracCounted = false;
+  function notePracticeSolve(n) {
+    if (pracCounted) return;
+    pracCounted = true;
+    achState.__solves = (achState.__solves | 0) + 1;
+    var diff = parseInt($('pracDifficulty').value, 10) || 20;
+    award('first-solve');
+    if (diff >= 20) award('solve-20');
+    if (diff >= 35) award('solve-35');
+    if ((achState.__solves | 0) >= 5) award('five-solves');
+    saveAch(); renderAch();
+  }
+  function noteModeVisit(m) {
+    var v = achState.__visited = achState.__visited || {};
+    if (!v[m]) { v[m] = 1; saveAch(); if (v.lesson && v.solve && v.practice) award('explorer'); }
+  }
+  function checkAch() {   // 课程演示终点埋点
+    if (mode === 'lesson' && turns().length > 0 && frame >= turns().length) {
+      if (lessonIdx === 0) award('lesson-1');
+      if (lessonIdx === L.LESSONS.length - 1) award('lesson-7');
+    }
+  }
+  function achHint(msg) { var el = $('achHint'); if (el) el.textContent = msg || ''; }
+
+  // ---- 登录弹窗 ----
+  var authModalEl = $('authModal');
+  function openAuth(gateMsg) {
+    if (gateMsg) { var h = $('authGlobalHint'); h.textContent = gateMsg; h.className = 'modal-hint'; }
+    authModalEl.hidden = false;
+  }
+  function closeAuth() { authModalEl.hidden = true; $('authGlobalHint').textContent = ''; }
+  $('btnLogin').onclick = function () { openAuth(''); };
+  $('authClose').onclick = closeAuth;
+  $('authMask').onclick = closeAuth;
+  Array.prototype.forEach.call(document.querySelectorAll('#authTabs .tab'), function (b) {
+    b.onclick = function () {
+      Array.prototype.forEach.call(document.querySelectorAll('#authTabs .tab'), function (x) { x.classList.toggle('on', x === b); });
+      Array.prototype.forEach.call(document.querySelectorAll('#authModal .tabpane'), function (p) { p.hidden = p.dataset.pane !== b.dataset.tab; });
+    };
+  });
+  function setAuthHint(id, msg, cls) { var el = $(id); el.textContent = msg || ''; el.className = 'modal-hint' + (cls ? ' ' + cls : ''); }
+  function onLoginSuccess(token, user) {
+    var guest = {}; try { guest = JSON.parse(localStorage.getItem('cubeAch_guest') || '{}'); } catch (e) {}
+    AC.store.set(token, user);
+    var cur = {}; try { cur = JSON.parse(localStorage.getItem(achKey()) || '{}'); } catch (e) {}
+    var out = { __solves: Math.max(guest.__solves | 0, cur.__solves | 0),
+      __visited: Object.assign({}, guest.__visited || {}, cur.__visited || {}) };
+    ACHS.forEach(function (a) { if (guest[a.id] || cur[a.id]) out[a.id] = guest[a.id] || cur[a.id]; });
+    achState = out; saveAch();
+    renderAuth(); closeAuth();
+    achHint('✓ 已登录为 ' + (user.username || user.email || user.phone) + '，成就与进度将按账号保存。');
+  }
+  function renderAuth() {
+    var logged = AC && AC.store.isLoggedIn();
+    var u = AC && AC.store.getUser();
+    $('btnLogin').hidden = !!logged;
+    $('userChip').hidden = !logged;
+    if (logged && u) {
+      var name = u.username || u.email || u.phone || '用户';
+      $('userName').textContent = name;
+      $('userAvatar').textContent = name.charAt(0).toUpperCase();
+    }
+    achState = loadAchState(); renderAch();
+  }
+  $('auEmailReg').onclick = function () {
+    var email = $('auEmail').value.trim(), pass = $('auPass').value, uname = $('auUsername').value.trim();
+    if (!email || pass.length < 6) return setAuthHint('auEmailHint', '请填邮箱，密码至少 6 位', 'err');
+    AC.auth.register({ email: email, password: pass, username: uname || undefined }).then(function (r) {
+      var dev = (r.dev && (r.dev.emailCode || r.dev.phoneCode)) || '';
+      setAuthHint('auEmailHint', '注册成功，请点「登录」。' + (dev ? '（开发态验证码：' + dev + '）' : ''), 'ok');
+    }).catch(function (e) { setAuthHint('auEmailHint', e.message, 'err'); });
+  };
+  $('auEmailLogin').onclick = function () {
+    AC.auth.login({ email: $('auEmail').value.trim(), password: $('auPass').value })
+      .then(function (r) { onLoginSuccess(r.token, r.user); })
+      .catch(function (e) { setAuthHint('auEmailHint', e.message, 'err'); });
+  };
+  $('auPhoneCode').onclick = function () {
+    var phone = $('auPhone').value.trim();
+    if (!phone) return setAuthHint('auPhoneHint', '先填手机号（E.164 格式）', 'err');
+    AC.auth.sendPhoneCode(phone).then(function (r) {
+      var code = r.dev && (r.dev.code || r.dev.phoneCode);
+      setAuthHint('auPhoneHint', code ? '开发态验证码：' + code + '（已填入）' : '验证码已发送', 'ok');
+      if (code) $('auCode').value = code;
+    }).catch(function (e) { setAuthHint('auPhoneHint', e.message, 'err'); });
+  };
+  $('auPhoneLogin').onclick = function () {
+    var phone = $('auPhone').value.trim(), code = $('auCode').value.trim();
+    if (!phone || !code) return setAuthHint('auPhoneHint', '填手机号和验证码', 'err');
+    AC.auth.login({ phone: phone, code: code })
+      .then(function (r) { onLoginSuccess(r.token, r.user); })
+      .catch(function (e) { setAuthHint('auPhoneHint', e.message, 'err'); });
+  };
+  $('auWechat').onclick = function () {
+    AC.auth.wechatMock({})
+      .then(function (r) { onLoginSuccess(r.token, r.user); })
+      .catch(function (e) { setAuthHint('auWechatHint', e.message, 'err'); });
+  };
+  $('btnLogout').onclick = function () {
+    AC.store.clear(); renderAuth();
+    achHint('已退出，成就回到游客（仅浏览器本机）。');
+  };
+
+  // ---- 登录门禁：保存进度 / 好友 PK ----
+  function pracSaveKey() {
+    var u = AC && AC.store.getUser();
+    return 'cubePracticeState_' + (u && u.id ? u.id : 'guest');
+  }
+  $('btnSaveProgress').onclick = function () {
+    if (!(AC && AC.store.isLoggedIn())) { openAuth('保存成就 / 进度 / 好友 PK 需要先登录；游客也可以随便玩。'); return; }
+    var payload = { scramble: practiceScrambleAlg, tokens: practiceTokens.slice(),
+      difficulty: $('pracDifficulty').value, savedAt: Date.now() };
+    try { localStorage.setItem(pracSaveKey(), JSON.stringify(payload)); } catch (e) {}
+    achHint('✓ 已保存到本账号（成就 + 当前练习进度）。跨设备云存档暂未开通。');
+  };
+  $('btnPK').onclick = function () {
+    if (!(AC && AC.store.isLoggedIn())) { openAuth('好友 PK 需要先登录。'); return; }
+    achHint('好友 PK 面板下一轮上线；好友关系接口（搜索 / 申请 / 接受）已在登录后端就绪。');
+  };
+  function pracRestore() {   // 登录用户首次进练习：恢复上次保存的进度
+    try {
+      var raw = localStorage.getItem(pracSaveKey()); if (!raw) return false;
+      var p = JSON.parse(raw); if (!p || !p.scramble) return false;
+      practiceScrambleAlg = p.scramble;
+      practiceStart = Cube.applySeq(Cube.solvedState(), Cube.parseAlg(p.scramble));
+      practiceTokens = (p.tokens || []).slice(); frame = practiceTokens.length;
+      if (p.difficulty) $('pracDifficulty').value = p.difficulty;
+      playing = false; syncPlayBtn();
+      setStatic(stateAt(frame)); applyFocus();
+      renderPracStatus(); renderPracList(); renderFrame();
+      achHint('已恢复上次保存的练习进度（' + practiceTokens.length + ' 步）。');
+      return true;
+    } catch (e) { return false; }
+  }
+  renderAuth();
+
+  // 暴露给无头浏览器做状态断言
+  window.__proto = {
+    state: function () {
+      var v = renderer.getView(), r = renderer.stats();
+      return { mode: mode, lesson: lessonIdx + 1, caseIdx: caseIdx, level: levelIdx,
+        cur: cur, frame: frame, total: steps.length, turnCount: turns().length,
+        solved: result ? result.solved : null, moves: result && result.stats.moves,
+        stages: result && result.stages.length, lessonCount: L.LESSONS.length,
+        goalMet: demo ? demo.goalMet : null, goalLabel: demo ? demo.goalLabel : null,
+        goal: demo ? demo.goal : null, startWhiteOnD: demo ? L.whiteOnD(demo.startState) : null,
+        restored: demo ? demo.restored : null, demoTitle: demo ? demo.title : null,
+        caseCards: $('casegrid').children.length,
+        playing: playing, loop: loopStep, auto: autoAdvance, grayMode: grayMode,
+        notation: mode === 'lesson' ? (demo ? demo.tokens.join(' ') : '') : (curUnit() && curUnit().notation),
+        anim: !!anim, animT: anim ? anim.t : 0, animToken: anim ? anim.token : null,
+        yaw: v.yaw, pitch: v.pitch, zoom: v.zoom,
+        drawn: r.drawn, layer: r.layer, panels: r.panels, animating: r.animating,
+        kept: r.kept, grayed: r.grayed, accented: r.accented, hatched: r.hatched };
+    },
+    diagramInfo: function () {
+      return Array.prototype.map.call($('casegrid').children, function (card, i) {
+        var dg = L.buildDemo(lessonIdx, i).diagram;
+        return { index: i, face: dg.face, focus: dg.focus, cells: dg.cells.slice(),
+          strips: dg.strips, renderedCells: card.querySelectorAll('.dcell').length,
+          renderedStrips: card.querySelectorAll('.dstrip').length,
+          canvasDrawn: caseRenderers[i] ? caseRenderers[i].stats().drawn : 0,
+          selected: card.classList.contains('on') };
+      });
+    },
+    goTo: goTo, load: load, next: function () { goTo(cur + 1); }, stepTurn: stepTurn,
+    selectCase: selectCase, switchMode: switchMode, goToTurn: goToTurn,
+    pause: function () { playing = false; once = false; syncPlayBtn(); },
+    play: function () { playing = true; syncPlayBtn(); },
+    setView: function (y, p) { renderer.setView(y, p, null); needDraw = true; },
+    finishTurn: function () { if (anim) { anim.t = 1; commitTurn(); } },
+    result: function () { return result; }, lessons: function () { return L; },
+    focusMasks: function () { return focusMasks; },
+    coverYaw: function () { return coverYaw; }, coverVisible: function () { return !coverEl.hidden; },
+    coverPhase: function () { return coverPhase; }, coverClip: function () { return coverClip; },
+    coverAnimating: function () { return !!coverAnim; },
+    coverStateSolved: function () { return Cube.isSolved(coverState); },
+    pracNew: pracNew, pracReset: pracReset, pracCheck: pracCheck, pracAnswer: pracAnswer,
+    authInfo: function () {
+      return { loggedIn: !!(AC && AC.store.isLoggedIn()), user: AC ? AC.store.getUser() : null,
+        base: AC ? AC.base : null, ach: JSON.parse(JSON.stringify(achState)) };
+    },
+    openAuth: openAuth, award: award, pracRestore: pracRestore,
+    achListRendered: function () { return document.querySelectorAll('#achList .ach-item').length; },
+    userMove: userMove, pracMode: function () { return mode === 'practice'; },
+    pracInfo: function () {
+      var s = stateAt(frame);
+      return { mode: mode, hasStart: !!practiceStart, start: practiceStart ? practiceStart.slice() : null,
+        tokens: practiceTokens.slice(), frame: frame, scrambleAlg: practiceScrambleAlg,
+        current: s ? s.slice() : null, solved: s ? Cube.isSolved(s) : false,
+        facesDone: pracFacesDone(s) };
+    },
+    coverInfo: function () {
+      var seq = coverSeq();
+      return { clip: coverClip, clips: coverClips.length, phase: coverPhase,
+        idx: coverIdx, total: seq.length, scramble: coverClips[coverClip].scr.slice(),
+        solution: coverClips[coverClip].sol.slice(), solved: Cube.isSolved(coverState),
+        stepText: coverStepEl.textContent, barWidth: coverFillEl.style.width };
+    },
+    coachAuto: function () { return !coachNever(); },
+    notationVisible: function () { return !notationEl.hidden; },
+    notationCount: function () { return notationRs.length; },
+    notationDrawn: function () { return notationRs.map(function (o) { return o.drawn; }); },
+    openNotation: openNotation, closeNotation: closeNotation
+  };
+
+  /* ---------- 新手引导（coach marks） ---------- */
+  var COACH_STEPS = [
+    { sel: '#cube3d', place: 'top', title: '① 这是你的魔方',
+      msg: '它默认先暂停。用鼠标拖拽可以旋转视角、滚轮缩放——想看哪一面都行。' },
+    { sel: '#btnPlay', place: 'top', title: '② 随时停下 / 继续',
+      msg: '点这个按钮（或按空格键）就能暂停或继续自动演示。上面这个「单段循环」让它一遍遍重播当前情况。公式里的 R、U 看不懂，点右上角「🔤 符号说明」。' },
+    { sel: '#btnTurnNext', place: 'top', title: '③ 一格一格跟着转',
+      msg: '想自己来？点「单转下一格」一转一转跟着做；「退一转」回看上一步。也可以用键盘 ← → 方向键。' },
+    { sel: '#casegrid', place: 'left', title: '④ 先找你的「情况」',
+      msg: '对照你的魔方找最像的一张卡片，点一下就能切换演示。每课的图只点亮该看的槽位，斜线阴影的一律不用管。' },
+    { sel: '#btnGray', place: 'bottom', title: '⑤ 只看有效块',
+      msg: '七课默认都开「只看有效块」：已经做好的块保留颜色，本课要处理的块描蓝框，其余全部打上斜线。点一下可切回全色对照。' }
+  ];
+  // 进入「个人练习」时的两步引导：① 符号说明在哪 ② 操作栏（转法键盘）在哪
+  var PRAC_COACH_STEPS = [
+    { sel: '#btnNotation', place: 'bottom', title: '① 看不懂符号？点这里',
+      msg: 'R / U / F / L / D / B 这些字母的意思，以及每个转动在魔方上怎么动，都在这「符号说明」里，随时可点开看。' },
+    { sel: '#turnpad', place: 'top', title: '② 在这里动手转',
+      msg: "这就是「操作栏」：点 R / U / F / L / D / B（含撇号 ' 与数字 2）让魔方拧一下；下面还有「退一步 / 检查是否复原 / 看答案」。键盘面键也能直接转。" }
+  ];
+  var coachOn = false, coachStep = 0, coachSteps = COACH_STEPS, coachKind = 'main';
+  var coachEl = $('coach'), spotEl = $('coachSpot'), bubbleEl = $('coachBubble'),
+      arrowEl = $('coachArrow'), stepTxt = $('coachStepTxt'), msgEl = $('coachMsg'),
+      progEl = $('coachProgress');
+  function layoutCoach() {
+    if (!coachOn) return;
+    var s = coachSteps[coachStep], tgt = document.querySelector(s.sel);
+    if (!tgt) { closeCoach(true); return; }
+    var r = tgt.getBoundingClientRect(), pad = 8;
+    spotEl.style.left = (r.left - pad) + 'px';
+    spotEl.style.top = (r.top - pad) + 'px';
+    spotEl.style.width = (r.width + pad * 2) + 'px';
+    spotEl.style.height = (r.height + pad * 2) + 'px';
+    bubbleEl.style.visibility = 'hidden';
+    bubbleEl.style.left = '0px'; bubbleEl.style.top = '0px';
+    var bw = bubbleEl.offsetWidth, bh = bubbleEl.offsetHeight;
+    bubbleEl.style.visibility = '';
+    var vw = window.innerWidth, vh = window.innerHeight, m = 8, left, top;
+    if (s.place === 'top') { left = r.left + r.width / 2 - bw / 2; top = r.top - bh - 10; arrowEl.className = 'coach-arrow down'; }
+    else if (s.place === 'bottom') { left = r.left + r.width / 2 - bw / 2; top = r.bottom + 10; arrowEl.className = 'coach-arrow up'; }
+    else if (s.place === 'left') { left = r.left - bw - 10; top = r.top + r.height / 2 - bh / 2; arrowEl.className = 'coach-arrow right'; }
+    else { left = r.right + 10; top = r.top + r.height / 2 - bh / 2; arrowEl.className = 'coach-arrow left'; }
+    left = Math.max(m, Math.min(vw - bw - m, left));
+    top = Math.max(m, Math.min(vh - bh - m, top));
+    bubbleEl.style.left = left + 'px';
+    bubbleEl.style.top = top + 'px';
+  }
+  function renderCoach() {
+    var s = coachSteps[coachStep];
+    stepTxt.textContent = s.title;
+    msgEl.textContent = s.msg;
+    progEl.textContent = (coachStep + 1) + ' / ' + coachSteps.length;
+    $('coachPrev').disabled = coachStep === 0;
+    var last = coachStep === coachSteps.length - 1;
+    $('coachNext').textContent = last ? (coachKind === 'practice' ? '知道了' : '开始练习') : '下一步';
+    layoutCoach();
+  }
+  function coachNever() { try { return localStorage.getItem('cubeCoachNever') === '1'; } catch (e) { return false; } }
+  function syncNeverBtn() { $('coachNever').textContent = coachNever() ? '恢复每次提示' : '不再自动弹出'; }
+  // 引导从封面自动弹出、或永久跳过引导后，关掉时把阅读落点放到顶部「三个模式标签」栏
+  // （课程学习 / 实战求解 / 个人练习 贴顶可见，其上标题栏滚出视口，不再深入滚到「本课起点」框）
+  var coachFromCover = false;
+  function landOnStart() {
+    var bar = document.querySelector('.modebar');
+    if (!bar) return;
+    var top = window.scrollY + bar.getBoundingClientRect().top;
+    window.scrollTo(0, Math.max(0, top));
+  }
+  function openCoach(fromCover, steps, kind) {
+    coachOn = true; coachStep = 0;
+    coachSteps = steps || COACH_STEPS; coachKind = kind || 'main';
+    coachEl.hidden = false;
+    coachFromCover = !!fromCover;
+    $('coachNever').hidden = (coachKind === 'practice');   // 练习引导没有「不再自动弹出」
+    playing = false; once = false; syncPlayBtn();   // 进页面先暂停，把节奏交给你
+    syncNeverBtn();
+    renderCoach();
+  }
+  // 进入「个人练习」时的两步引导：① 符号说明 ② 操作栏（转法键盘）
+  function openPracticeCoach() {
+    openCoach(false, PRAC_COACH_STEPS, 'practice');
+  }
+  function closeCoach(keepPosition) {
+    if (!coachOn) return;
+    var land = coachFromCover && !keepPosition;
+    if (coachKind === 'practice') { try { localStorage.setItem('cubePracticeCoachSeen', '1'); } catch (e) {} }
+    coachOn = false; coachEl.hidden = true; coachFromCover = false; coachKind = 'main';
+    if (land) landOnStart();
+  }
+  $('btnHelp').onclick = function () { openCoach(false); };   // 手动点「？怎么用」永远能重看
+  $('coachNever').onclick = function () {
+    try {
+      if (coachNever()) localStorage.removeItem('cubeCoachNever');
+      else localStorage.setItem('cubeCoachNever', '1');
+    } catch (e) {}
+    syncNeverBtn();
+    closeCoach();
+  };
+  $('coachNext').onclick = function () {
+    if (coachStep >= coachSteps.length - 1) closeCoach();
+    else { coachStep++; renderCoach(); }
+  };
+  $('coachPrev').onclick = function () { if (coachStep > 0) { coachStep--; renderCoach(); } };
+  $('coachSkip').onclick = function () { closeCoach(); };
+  window.addEventListener('resize', layoutCoach);
+  window.addEventListener('scroll', layoutCoach, true);
+
+  /* ---------- 进场封面：4 组 24 步「假随机」打乱 → 逐转复原，循环播放 ----------
+   * 序列由固定种子生成（每次进入随机挑一组），复原段就是打乱段的严格逆序，
+   * 所以 48 转之后一定回到六面复原；步数读数与进度条让长序列看得懂。 */
+  var COVER_SEEDS = [1701, 2468, 3579, 4826];
+  var COVER_STEPS = 24, COVER_TURN_MS = 205, COVER_HOLD_MS = 26;
+  var coverEl = $('cover'), coverCanvas = $('coverCube');
+  var coverStepEl = $('coverStep'), coverFillEl = $('coverFill');
+  var coverR = R3.createRenderer(coverCanvas, CSS, { transparent: true });
+  var coverClips = COVER_SEEDS.map(function (seed) {
+    var scr = Cube.randomScramble(COVER_STEPS, seed);
+    return { seed: seed, scr: scr, sol: scr.slice().reverse().map(invertTok) };
+  });
+  var coverYaw = -28, coverSpin = false, coverRAF = null, coverLastTs = 0;
+  var coverClip = Math.floor(Math.random() * coverClips.length);  // 每次进入换一组
+  var coverPhase = 0;              // 0 = 正在打乱，1 = 正在复原
+  var coverIdx = 0, coverHold = 0;
+  var coverState = Cube.solvedState(), coverFrom = null, coverAnim = null;
+  function coverSeq() { return coverPhase === 0 ? coverClips[coverClip].scr : coverClips[coverClip].sol; }
+  // step 用 1..n 表示「正在做第几转」，tok 是当前（或刚做完）的记号
+  function coverReadout(step, tok) {
+    var n = coverSeq().length;
+    var pad = function (v) { return ('0' + v).slice(-2); };
+    coverStepEl.innerHTML = '第 <b>' + (coverClip + 1) + '</b> / ' + coverClips.length + ' 组 · ' +
+      (coverPhase === 0 ? '打乱' : '复原') + ' <b>' + pad(step) + ' / ' + n + '</b>' +
+      (tok ? ' · <b>' + tok + '</b>' : ' · 就位');
+    coverFillEl.style.width = (n ? (step / n * 100) : 0).toFixed(1) + '%';
+  }
+  function coverResize() { if (coverCanvas.clientWidth) coverR.resize(); }
+  function coverDraw() {
+    coverYaw = (coverYaw + 0.16) % 360;
+    // 转到正对某一面时抬高俯角，保证任何时刻都至少看见两个面，不会塌成一张平面九宫格
+    var pitch = 26 + 12 * Math.abs(Math.cos(coverYaw * Math.PI / 180)) +
+      3 * Math.sin(coverYaw * Math.PI / 60);
+    coverR.setView(coverYaw, pitch, 1);
+    if (coverAnim) coverR.render(null, { from: coverFrom, spec: coverAnim.spec, t: ease(coverAnim.t) });
+    else coverR.render(coverState, null);
+  }
+  function coverLoop(ts) {
+    if (!coverSpin) return;
+    var dt = coverLastTs ? Math.min(64, ts - coverLastTs) : 16;
+    coverLastTs = ts;
+    if (coverHold > 0) coverHold -= dt;
+    else if (coverAnim) {
+      coverAnim.t += dt / COVER_TURN_MS;
+      if (coverAnim.t >= 1) {
+        var lastTok = coverAnim.token;
+        coverState = Cube.applyMove(coverState, lastTok);
+        coverAnim = null; coverIdx++; coverHold = COVER_HOLD_MS;
+        coverReadout(coverIdx, lastTok);
+      }
+    } else {
+      var seq = coverSeq();
+      if (coverIdx >= seq.length) {
+        if (coverPhase === 0) { coverPhase = 1; coverIdx = 0; coverHold = 420; coverReadout(0, ''); }
+        else {
+          coverClip = (coverClip + 1) % coverClips.length;
+          coverPhase = 0; coverIdx = 0;
+          coverState = Cube.solvedState(); coverHold = 560;                          // 复原完换下一组
+          coverReadout(0, '');
+        }
+      } else {
+        var tok = seq[coverIdx];
+        coverFrom = coverState;
+        coverAnim = { token: tok, spec: R3.moveSpec(tok), t: 0 };
+        coverReadout(coverIdx + 1, tok);
+      }
+    }
+    coverDraw();
+    coverRAF = requestAnimationFrame(coverLoop);
+  }
+  function showCover() {
+    coverEl.hidden = false;
+    coverResize();
+    coverReadout(0, '');
+    coverSpin = true; coverLastTs = 0;
+    if (!coverRAF) coverRAF = requestAnimationFrame(coverLoop);
+  }
+  function dismissCover() {
+    if (coverEl.hidden) return;
+    coverSpin = false;
+    if (coverRAF) { cancelAnimationFrame(coverRAF); coverRAF = null; }
+    coverEl.classList.add('cover-out');
+    setTimeout(function () {
+      coverEl.hidden = true; coverEl.classList.remove('cover-out');
+      // 引导被永久跳过时，也把阅读落点放到顶部「三个模式标签」栏，不让首页停在魔方上
+      try {
+        if (!localStorage.getItem('cubeCoachNever')) openCoach(true);
+        else landOnStart();
+      } catch (e) { openCoach(true); }
+    }, 420);
+  }
+  $('coverStart').onclick = dismissCover;
+  coverEl.addEventListener('click', function (e) {
+    if (e.target === coverEl || e.target.classList.contains('cover-title') ||
+        e.target.classList.contains('cover-sub') || e.target.classList.contains('cover-hint') ||
+        e.target.classList.contains('cover-step') || e.target.classList.contains('cover-bar') ||
+        e.target.classList.contains('cover-fill'))
+      dismissCover();
+  });
+  window.addEventListener('resize', coverResize);
+
+  renderLevels();
+  switchMode('lesson');
+  playing = false; syncPlayBtn();   // 进页面先暂停：先放封面，再弹引导，把节奏交给你
+  showCover();   // 显示封面（魔方自转作为进场动画），点「开始学习」后再弹新手引导
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

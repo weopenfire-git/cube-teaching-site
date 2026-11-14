@@ -1,0 +1,18 @@
+{
+  "name": "auth-module",
+  "version": "1.0.0",
+  "description": "可复用的网站登录模块（邮箱/微信/手机号 + 好友系统），支持跨站 SSO 调用",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^13.1.1",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^10.5.0",
+    "tencentcloud-sdk-nodejs-sms": "^4.1.306",
+    "twilio": "^6.3.0"
+  }
+}

@@ -1,0 +1,26 @@
+# cube 教学站 · 与航迹完全隔离：端口 8081（航迹 8080）、目录 /opt/cube-deploy、
+# 容器名 cube-web / cube-auth、卷 cube-auth-data。登录后端端口不映射到宿主（不对公网）。
+services:
+  cube-web:
+    image: nginx:1.27-alpine
+    container_name: cube-web
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    volumes:
+      - ./site:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - cube-auth
+
+  cube-auth:
+    build: ./auth
+    container_name: cube-auth
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - cube-auth-data:/data
+
+volumes:
+  cube-auth-data:
