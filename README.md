@@ -1,4 +1,4 @@
-# cube 教学站（魔方七课 + 个人练习 + 登录/成就）· 部署仓
+# cube 教学站（魔方七课 + 个人练习 + 登录/成就）部署仓
 
 与「航迹 WingTrace」同机并行部署，完全隔离。
 
@@ -16,9 +16,21 @@
 ```
 site/        页面静态文件（index.html + cube-*.js + authClient.js）——由 cube-prototype/sync-deploy.cjs 生成，勿手改
 auth/        登录后端（Express + better-sqlite3，复制自 网站登陆功能/，Dockerfile 换 bookworm-slim）
+portal/      公司主页（纯静态 index.html，域名到位后由 nginx 挂根域）
+scripts/     backup.sh 每天备份 SQLite 卷并推到 GitHub 私有仓
 nginx.conf   本站专用安全头 + /api/ 同源反代（不抄航迹 CSP）
 docker-compose.yml
 ```
+
+## 公司主页（待域名）
+
+`portal/index.html` 是青简智慧科技（深圳）有限公司的产品导航页，零依赖纯静态。域名到位后：
+
+1. 把 `portal/index.html` 顶部 `SITE.domain` 改成实际主域（如 `qingjiansmart.cn`），卡片链接会自动切到子域名
+2. 在 nginx 里新增一个 server_name 根域的 server block，`root /usr/share/nginx/portal`，另一个 server block 用 `cube.` 子域指向 `site/`
+3. 证书用通配符 `*.主域` 一次覆盖
+
+当前 `portal/` 只是随仓带上服务器，不占用 8081，也不影响现有魔方站。
 
 ## 服务器操作（OrcaTerm 粘贴）
 
@@ -54,4 +66,4 @@ cd /opt/cube-deploy && git pull && sudo docker compose up -d --build
 
 - **HTTP 明文**：登录密码走明文传输，仅适合内测；正式对外前必须绑域名 + HTTPS（首尔免备案）。
 - `DEV_MODE=true`：验证码在接口响应里直接返回、微信走模拟扫码；接真实短信/邮件后改 `false` 并配 `.env` 的 SMTP/SMS 段。
-- 数据备份：`sudo docker run --rm -v cube-deploy_cube-auth-data:/data -v $(pwd):/b alpine tar czf /b/auth-db-$(date +%F).tgz -C /data .`
+- 数据备份：已用 `scripts/backup.sh` 自动化（本地保留 90 天 + 自动推 GitHub 私有仓 `cube-backups`），手动备份命令 `sudo /bin/bash /opt/cube-deploy/scripts/backup.sh`；定时任务 `30 3 * * *`。纯手工兜底：`sudo docker run --rm -v cube-deploy_cube-auth-data:/data -v $(pwd):/b alpine tar czf /b/auth-db-$(date +%F).tgz -C /data .`

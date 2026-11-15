@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>青简智慧科技（深圳）有限公司 产品导航</title>
+<meta name="theme-color" content="#FFFFFF">
+<style>
+  :root{
+    --bg:#FFFFFF; --panel:#F4F7FC; --soft:#EDF2F9;
+    --blue:#2563EB; --blue-dim:#DBEAFE; --blue-deep:#1D4ED8;
+    --text:#16202F; --muted:#5C6779; --ok:#0F9D6E;
+    --mono:'Roboto Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:'Exo','Inter',-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.7}
+  .wrap{max-width:960px;margin:0 auto;padding:64px 24px 80px}
+  .eyebrow{display:inline-block;background:var(--blue-dim);color:var(--blue-deep);border-radius:6px;padding:4px 10px;font-size:12px;font-family:var(--mono)}
+  h1{font-size:30px;font-weight:600;letter-spacing:.01em;margin:18px 0 8px}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 40px;max-width:620px}
+  h2{font-size:16px;font-weight:600;margin:0 0 14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+  .card{display:flex;flex-direction:column;background:var(--panel);border-radius:12px;padding:20px 20px 18px;text-decoration:none;color:inherit;transition:transform .12s,background .15s}
+  .card:hover{background:var(--soft);transform:translateY(-2px)}
+  .card.plan{opacity:.66;cursor:default}
+  .card.plan:hover{transform:none;background:var(--panel)}
+  .tag{align-self:flex-start;font-size:11px;font-family:var(--mono);color:var(--ok);background:#fff;border-radius:5px;padding:2px 8px;margin-bottom:12px}
+  .tag.plan{color:var(--muted)}
+  .ct{font-size:17px;font-weight:600;margin:0 0 6px}
+  .cd{font-size:13px;color:var(--muted);line-height:1.6;flex:1}
+  .ch{font-family:var(--mono);font-size:11px;color:var(--blue-deep);margin-top:14px;word-break:break-all}
+  .foot{margin-top:56px;color:var(--muted);font-size:12px;line-height:1.8}
+  .foot b{color:var(--text);font-weight:600}
+  @media(max-width:600px){.wrap{padding:40px 18px 60px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="eyebrow">QINGJIAN</span>
+  <h1>青简智慧科技（深圳）有限公司</h1>
+  <p class="sub">这里只列已经实际做出来的东西。工具做完一个，就往这个域名下挂一个，不单独再为每件事买一个网址。</p>
+
+  <h2>已上线的产品</h2>
+  <div class="grid">
+    <a class="card" id="cardCube" href="http://43.155.178.13:8081/">
+      <span class="tag">已上线</span>
+      <div class="ct">教学型魔方</div>
+      <div class="cd">七阶段层先法分级课程、实战求解、个人练习与成就系统。可逐转慢放，练习模式自己动手复原。</div>
+      <div class="ch" id="hostCube">43.155.178.13:8081</div>
+    </a>
+    <a class="card" id="cardWindborne" href="https://windborne.wangymb.workers.dev">
+      <span class="tag">已部署</span>
+      <div class="ct">Windborne 飞行日志</div>
+      <div class="cd">面向飞行爱好者的航班记录与个人公开主页，采用用户名密码登录。</div>
+      <div class="ch" id="hostWindborne">windborne.wangymb.workers.dev</div>
+    </a>
+    <a class="card" id="cardGithub" href="https://github.com/weopenfire-git/cube-teaching-site">
+      <span class="tag">代码仓</span>
+      <div class="ct">站点源码与部署仓</div>
+      <div class="cd">魔方教学站的静态页面、Nginx 同源反代配置与登录后端容器，整包版本化管理。</div>
+      <div class="ch">github.com/weopenfire-git/cube-teaching-site</div>
+    </a>
+    <a class="card" id="cardShare" href="http://43.155.178.13:8081/">
+      <span class="tag">已上线</span>
+      <div class="ct">成绩卡分享</div>
+      <div class="cd">个人练习里按真实状态生成六面展开图成绩卡，可保存图片或复制成绩文字发到微信。</div>
+      <div class="ch">教学型魔方 个人练习</div>
+    </a>
+  </div>
+
+  <h2 style="margin-top:36px">规划中</h2>
+  <div class="grid">
+    <div class="card plan">
+      <span class="tag plan">规划中</span>
+      <div class="ct">统一账号中心</div>
+      <div class="cd">所有站点共用一套注册登录与好友关系，按账号保存成就与进度。</div>
+    </div>
+    <div class="card plan">
+      <span class="tag plan">规划中</span>
+      <div class="ct">好友 PK</div>
+      <div class="cd">好友之间对比复原步数与成就。后端好友接口已就绪，前端面板待做。</div>
+    </div>
+    <div class="card plan">
+      <span class="tag plan">规划中</span>
+      <div class="ct">主域名与 HTTPS</div>
+      <div class="cd">公司域名完成企业实名后，把各产品迁到子域名，整站启用 HTTPS 与通配符证书。</div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <b>关于域名</b><br>
+    公司域名到位后，各产品会逐步迁到子域名下（魔方站挂在 cube 子域）。本页是纯静态页面，无外部依赖，域名解析一生效即可直接访问。<br>
+    <span id="footDomain"></span>
+  </div>
+</div>
+
+<script>
+/* 域名到位后只改下面这一个 domain 值，卡片链接和页脚会自动切到子域名 */
+var SITE = {
+  domain: '',                 // 例：'qingjiansmart.cn'
+  cube: 'http://43.155.178.13:8081/',
+  windborne: 'https://windborne.wangymb.workers.dev',
+  github: 'https://github.com/weopenfire-git/cube-teaching-site'
+};
+(function () {
+  var d = SITE.domain.replace(/^\.+|\.+$/g, '');
+  document.getElementById('cardWindborne').href = SITE.windborne;
+  document.getElementById('cardGithub').href = SITE.github;
+  if (d) {
+    var cu = 'https://cube.' + d + '/', wi = 'https://windborne.' + d + '/';
+    document.getElementById('cardCube').href = cu;
+    document.getElementById('cardShare').href = cu;
+    document.getElementById('hostCube').textContent = 'cube.' + d;
+    document.getElementById('cardWindborne').href = wi;
+    document.getElementById('hostWindborne').textContent = 'windborne.' + d;
+    document.getElementById('footDomain').textContent = '当前主域：' + d;
+  } else {
+    document.getElementById('cardCube').href = SITE.cube;
+    document.getElementById('cardShare').href = SITE.cube;
+    document.getElementById('footDomain').textContent = '当前尚未绑定主域，卡片指向各产品的实际部署地址。';
+  }
+})();
+</script>
+</body>
+</html>

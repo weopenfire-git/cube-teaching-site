@@ -296,6 +296,11 @@
   .ach-item .ad{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.45}
   .ach-item .ast{font-size:11px;margin-top:5px;font-family:var(--mono)}
   .ach-item.on .ast{color:var(--ok)}
+  /* ---------- 成绩卡分享（v1.4.2） ---------- */
+  .modal-card.wide{width:min(430px,92vw)}
+  #shareCanvas{display:block;width:100%;height:auto;border-radius:10px;background:var(--panel2)}
+  .share-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}
+  .share-actions button{height:40px}
 </style>
 </head>
 <body>
@@ -306,7 +311,7 @@
       <p class="sub">一课只解决一个单点问题：先给总体公式，再对照魔方图示找自己的情况，最后逐转跟着做。</p>
       <div class="statbar" id="statbar"></div>
     </div>
-    <span class="ver">v1.4.1 2026-11-14</span>
+    <span class="ver">v1.4.2 2026-11-15</span>
   </header>
 
   <div class="modebar">
@@ -456,6 +461,7 @@
             <button id="pracUndo">|◀ 退一步</button>
             <button id="pracCheck">检查是否复原</button>
             <button id="pracAnswer">看答案</button>
+            <button id="pracShare">生成成绩卡</button>
           </div>
           <div class="sectionline"></div>
           <h2 class="sect">我的转法 <em>按时间顺序，点任意一步可跳回</em></h2>
@@ -483,6 +489,7 @@
   </main>
 
   <footer>
+    <b>v1.4.2：</b>「个人练习」新增<b>生成成绩卡</b>：按当前真实状态画出六面展开图，配上打乱难度、我的转法步数、复原进度、累计复原局数、已解锁成就数和日期，可保存成 PNG 发朋友圈，也可复制成绩文字直接粘到微信聊天。所有数字都取自当场状态，不编造成绩。<br>
     <b>v1.4.1：</b>顶部「📖 课程学习 / ⚡ 实战求解 / 🎯 个人练习」一栏改为<b>吸顶常驻</b>：往下滚动时三个模式标签、符号说明、登录/用户角标始终钉在页面最上方，随时可切换模式或登录。<br>
     <b>v1.4.0：</b>新增<b>登录与成就系统</b>：未登录可试用全部功能（课程学习 / 实战求解 / 个人练习）；点「💾 保存进度」或「⚔ 好友 PK」时才要求登录（邮箱 / 手机验证码 / 微信开发态模拟，三选一）。登录后成就与当前练习进度按账号保存在本机，并新增「成就与进度」卡片（初次复原 / 20 步与 35 步复原 / 累计五局 / 七课通关 / 三模式全体验等）。对接独立登录后端（默认 http://localhost:3001），好友 PK 面板下一轮上线。个人练习首次进入新增两步引导（① 符号说明 ② 操作栏）。<br>
     <b>v1.3.1：</b>跳过新手引导后的落点改为<b>页面顶部「三个模式标签」栏</b>（📖 课程学习 / ⚡ 实战求解 / 🎯 个人练习 贴顶可见，其上标题栏滚出视口）——不再深入滚到「本课起点」框，停在顶部就能直接切换三个模式。这是 v1.1.0「自动滚落点」的微调。<br>
@@ -554,6 +561,21 @@
         <button class="primary" id="auWechat">微信模拟登录（开发态）</button>
         <div class="modal-hint" id="auWechatHint">生产环境会跳转微信扫码；开发态直接模拟一个账号登录。</div>
       </div>
+    </div>
+  </div>
+
+  <!-- 成绩卡分享：canvas 生成图片 + 复制文字，数据全部取自当前真实练习状态 -->
+  <div id="shareModal" class="modal" hidden>
+    <div class="modal-mask" id="shareMask"></div>
+    <div class="modal-card wide" role="dialog" aria-modal="true" aria-label="我的魔方成绩卡">
+      <button class="modal-x" id="shareClose" title="关闭">×</button>
+      <h3 class="modal-title">我的魔方成绩卡</h3>
+      <canvas id="shareCanvas" width="720" height="960"></canvas>
+      <div class="share-actions">
+        <button class="primary" id="shareSave">保存图片</button>
+        <button id="shareCopy">复制成绩文字</button>
+      </div>
+      <div class="modal-hint" id="shareHint">图片可以发朋友圈或群，文字可以直接粘贴到微信聊天。</div>
     </div>
   </div>
 
@@ -1661,6 +1683,115 @@
   }
   renderAuth();
 
+  /* ---------- 成绩卡分享（v1.4.2）：所有数字都取自当前真实练习状态，不编造成绩 ---------- */
+  var shareCanvas = $('shareCanvas'), shareModal = $('shareModal');
+  var SHARE_FACES = [
+    { f: 'U', i: 0, x: 208, y: 258 }, { f: 'L', i: 4, x: 50, y: 434 },
+    { f: 'F', i: 2, x: 208, y: 434 }, { f: 'R', i: 1, x: 366, y: 434 },
+    { f: 'B', i: 5, x: 524, y: 434 }, { f: 'D', i: 3, x: 208, y: 610 }
+  ];
+  function shareData() {
+    if (!practiceStart) pracNew();
+    var s = stateAt(frame);
+    var diff = parseInt($('pracDifficulty').value, 10) || 20;
+    var n = practiceTokens.length;
+    var solved = s ? Cube.isSolved(s) : false;
+    var done = pracFacesDone(s);
+    var unlocked = ACHS.filter(function (a) { return !!achState[a.id]; }).length;
+    var d = new Date();
+    var date = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+    return { state: s ? s.slice() : null, diff: diff, steps: n, solved: solved,
+      facesDone: done, unlocked: unlocked, achTotal: ACHS.length,
+      solves: achState.__solves | 0, date: date };
+  }
+  function shareText(d) {
+    return '【我的魔方成绩】\n' +
+      '状态：' + (d.solved ? '已复原' : '进行中（6 个面里 ' + d.facesDone + ' 个整面同色）') + '\n' +
+      '打乱难度：' + d.diff + ' 步\n' +
+      '我的转法：' + d.steps + ' 步\n' +
+      '累计复原：' + d.solves + ' 局\n' +
+      '解锁成就：' + d.unlocked + ' / ' + d.achTotal + '\n' +
+      d.date + '\n教学型魔方 七课分层教学';
+  }
+  function drawSharePoster(d) {
+    var c = shareCanvas, g = c.getContext('2d'), W = c.width, H = c.height;
+    var SANS = 'PingFang SC, Microsoft YaHei, sans-serif';
+    g.fillStyle = '#FFFFFF'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#DBEAFE'; g.fillRect(48, 46, 150, 38);
+    g.fillStyle = '#1D4ED8'; g.font = '600 20px ' + SANS; g.textBaseline = 'middle';
+    g.fillText('教学型魔方', 66, 66);
+    g.fillStyle = '#16202F'; g.font = '700 42px ' + SANS;
+    g.fillText(d.solved ? '我把魔方复原了' : '我正在复原魔方', 48, 130);
+    g.fillStyle = '#2563EB'; g.font = '700 68px ' + SANS;
+    g.fillText(d.steps + ' 步', 48, 196);
+    g.fillStyle = '#5C6779'; g.font = '20px ' + SANS;
+    g.fillText('打乱难度 ' + d.diff + ' 步    复原进度 ' + d.facesDone + ' / 6 面', 48, 242);
+    // 六个面的真实贴纸展开图（每个面顶部预留 18px 放面名，避免文字压到贴纸）
+    var cell = 46, gap = 4;
+    SHARE_FACES.forEach(function (o) {
+      g.fillStyle = '#5C6779'; g.font = '600 14px ' + SANS;
+      g.fillText(o.f, o.x, o.y + 8);
+      for (var r = 0; r < 3; r++) for (var col = 0; col < 3; col++) {
+        var x = o.x + col * (cell + gap), y = o.y + 18 + r * (cell + gap);
+        var v = d.state ? d.state[o.i * 9 + r * 3 + col] : 0;
+        g.fillStyle = CSS[v] || '#F2F4F8';
+        g.fillRect(x, y, cell, cell);
+        g.strokeStyle = '#C9D3E3'; g.lineWidth = 1;
+        g.strokeRect(x + .5, y + .5, cell - 1, cell - 1);
+      }
+    });
+    g.fillStyle = '#16202F'; g.font = '600 24px ' + SANS;
+    g.fillText('累计复原 ' + d.solves + ' 局    解锁成就 ' + d.unlocked + ' / ' + d.achTotal, 48, 818);
+    g.fillStyle = '#5C6779'; g.font = '20px ' + SANS;
+    g.fillText(d.date, 48, 860);
+    g.fillStyle = '#DBEAFE'; g.fillRect(48, 900, W - 96, 2);
+    g.fillStyle = '#1D4ED8'; g.font = '600 22px ' + SANS;
+    g.fillText('教学型魔方 七课分层教学', 48, 932);
+    return { w: W, h: H };
+  }
+  var shareCache = null;
+  function openShare() {
+    var d = shareData();
+    shareCache = d;
+    drawSharePoster(d);
+    $('shareHint').className = 'modal-hint';
+    $('shareHint').textContent = '图片可以发朋友圈或群，文字可以直接粘贴到微信聊天。';
+    shareModal.hidden = false;
+  }
+  function closeShare() { shareModal.hidden = true; }
+  $('pracShare').onclick = openShare;
+  $('shareClose').onclick = closeShare;
+  $('shareMask').onclick = closeShare;
+  $('shareSave').onclick = function () {
+    if (!shareCache) openShare();
+    var a = document.createElement('a');
+    a.download = '魔方成绩-' + shareCache.date + '.png';
+    a.href = shareCanvas.toDataURL('image/png');
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    $('shareHint').className = 'modal-hint ok';
+    $('shareHint').textContent = '图片已生成，保存到相册后就能发朋友圈了。';
+  };
+  function shareCopyFallback(txt) {
+    var ta = document.createElement('textarea');
+    ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    return ok;
+  }
+  $('shareCopy').onclick = function () {
+    if (!shareCache) openShare();
+    var txt = shareText(shareCache);
+    var done = function (ok) {
+      $('shareHint').className = 'modal-hint ' + (ok ? 'ok' : 'err');
+      $('shareHint').textContent = ok ? '成绩文字已复制，去微信粘贴即可。' : '复制没成功，可以直接选中下面这段文字：' + txt;
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(function () { done(true); }, function () { done(shareCopyFallback(txt)); });
+    } else done(shareCopyFallback(txt));
+  };
+
   // 暴露给无头浏览器做状态断言
   window.__proto = {
     state: function () {
@@ -1709,6 +1840,14 @@
     },
     openAuth: openAuth, award: award, pracRestore: pracRestore,
     achListRendered: function () { return document.querySelectorAll('#achList .ach-item').length; },
+    openShare: openShare, closeShare: closeShare,
+    shareInfo: function () {
+      var d = shareData(), u = shareCanvas.toDataURL('image/png');
+      return { visible: !shareModal.hidden, text: shareText(d), pngHead: u.slice(0, 22), pngLen: u.length,
+        w: shareCanvas.width, h: shareCanvas.height, solved: d.solved, steps: d.steps,
+        diff: d.diff, facesDone: d.facesDone, unlocked: d.unlocked, achTotal: d.achTotal, solves: d.solves,
+        date: d.date };
+    },
     userMove: userMove, pracMode: function () { return mode === 'practice'; },
     pracInfo: function () {
       var s = stateAt(frame);
