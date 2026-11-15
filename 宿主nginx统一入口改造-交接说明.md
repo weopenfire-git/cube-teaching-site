@@ -7,6 +7,7 @@
 | 交付对象 | 维护宿主 nginx / 航迹站的一侧（「那边」） |
 | 文档地位 | **替代**部署仓 README 旧章节「域名与 HTTPS（Cloudflare 回源方案）」；与之冲突时以本文为准 |
 | 自洽性 | 本文不依赖任何口头补充或既往对话，可整份转发 |
+| 配置基线 | `host-nginx/qingjian.conf` 以 commit `e790d9c` 为准；其后的文档修订**未改动该配置文件**，blob 一致，已审核结论继续有效 |
 
 ---
 
@@ -88,15 +89,27 @@
 
 ### 4.0 只读体检（先跑，不改动任何东西）
 
+**严格停在第 1 步，等放行后再执行 4.2。**
+
 ```bash
 echo "=== 端口 ==="; sudo ss -lntp | grep -E ':80|:443|:8080|:8081'; echo "=== 系统 nginx ==="; sudo nginx -v 2>&1; sudo grep -nE 'include|conf.d|sites-enabled' /etc/nginx/nginx.conf; echo "=== 现有 default_server ==="; sudo grep -rn 'default_server' /etc/nginx/ 2>/dev/null | head -n 20; echo "=== 航迹存活 ==="; curl -sI http://127.0.0.1:8080/ | head -n 3
 ```
+
+建议**另起一行**再补三条只读检查（不混入主命令，输出更清晰）：
+
+```bash
+echo "=== 目标文件是否已存在 ==="; sudo ls -l /etc/nginx/conf.d/qingjian.conf 2>&1; echo "=== conf.d 现有文件 ==="; sudo ls -1 /etc/nginx/conf.d/; echo "=== 部署仓 HEAD ==="; git -C /opt/cube-deploy rev-parse --short HEAD
+```
+
+**已知环境事实（公网旁证，不能替代服务器内体检）**：宿主 80 是 `nginx/1.18.0 (Ubuntu)`，上面跑着**在用的 Flarum 论坛**（`X-Powered-By: Flarum` + `flarum_session` cookie）。它既不属于航迹容器、也不属于本项目，是宿主机上既有且必须原样保留的服务——这正是「不动既有 server 块、纯增量」成为第一红线的原因。公网 `https://43.155.178.13/` 超时，说明 443 尚未被防火墙放行，**不能据此判定 443 空闲**，必须看服务器内 `ss -lntp` 的输出。
 
 **分支判断，必须先确认再往下走：**
 
 - `80` 的进程是系统 `nginx`，且 `/etc/nginx/nginx.conf` 含 `include /etc/nginx/conf.d/*.conf;` → 按本文执行。
 - `80` 是别的服务（Apache / Node / 另一套 nginx 实例）→ **停下并反馈**，不要继续。此时「宿主 nginx 统一入口」的前提不成立，需先决定是否换成 nginx，或退回旧的容器 443 方案。
 - `443` 已有监听 → 停下并反馈，需要先查清归属，避免抢端口。
+- `/etc/nginx/conf.d/qingjian.conf` **已存在** → 停下并反馈。4.2 的失败回滚会 `rm -f` 这个文件；若先前装过同名配置，先把原文件另存备份再执行。
+- 部署仓 HEAD 与预期不符 → 把实际 commit 发回核对，确认 `host-nginx/qingjian.conf` 与已审核版本一致再走。
 
 ### 4.1 备份（必须）
 
@@ -104,25 +117,37 @@ echo "=== 端口 ==="; sudo ss -lntp | grep -E ':80|:443|:8080|:8081'; echo "===
 sudo cp -a /etc/nginx /etc/nginx.bak-$(date +%F-%H%M%S) && ls -d /etc/nginx.bak-*
 ```
 
-### 4.2 一次性上线（推荐，一条命令做完）
+### 4.2 一次性上线（加固版 B，唯一推荐）
+
+> **原版 A 有真实缺陷，请勿再用**：`cp qingjian.conf` 排在 `nginx -t` 之前，`&&` 只挡住 reload，不会删除刚放进 `conf.d/` 的文件。一旦 `nginx -t` 失败，当前进程没事，但**下次任何 reload / restart / 服务器重启 / apt 触发 nginx reload 都会读到坏配置起不来，宿主 80 上的 Flarum 论坛会一起挂**，正好踩中「不影响既有服务」的红线。加固版只多一处「失败自动删除回滚」，其余动作与顺序完全不变。
 
 ```bash
-cd /opt/cube-deploy && git pull && sudo bash scripts/gen-origin-cert.sh && sudo cp -a /etc/nginx /etc/nginx.bak-$(date +%F-%H%M%S) && sudo docker compose up -d && sudo cp host-nginx/qingjian.conf /etc/nginx/conf.d/qingjian.conf && sudo nginx -t && sudo systemctl reload nginx && sudo docker ps --filter name=cube-web --format '{{.Status}}'
+cd /opt/cube-deploy && git pull && sudo bash scripts/gen-origin-cert.sh && sudo cp -a /etc/nginx /etc/nginx.bak-$(date +%F-%H%M%S) && sudo docker compose up -d && sudo cp host-nginx/qingjian.conf /etc/nginx/conf.d/qingjian.conf && if sudo nginx -t; then sudo systemctl reload nginx; else sudo rm -f /etc/nginx/conf.d/qingjian.conf; echo '[回滚] nginx -t 未通过，已删除新增配置，宿主 nginx 未 reload'; false; fi && sudo docker ps --filter name=cube-web --format '{{.Status}}'
 ```
 
-若两侧分工、只由你负责宿主 nginx，则部署仓那条由对方先做：
+`git pull` 若因本地有未提交改动而中断，整条链会停在第一步（安全，看输出即可）；执行后可核对 `git -C /opt/cube-deploy rev-parse --short HEAD`。这次 `git pull` 还会**顺带把 v1.4.2 成绩卡带上线**（`site/` 是 bind mount，不需要单独重建容器）。
+
+**收尾检查（B 只覆盖 `nginx -t` 失败）**：`nginx -t` 通过但 `reload` 仍可能失败（例如 443 被意外占用）。跑完立刻补一条只读命令，确认宿主 nginx 真的活着并占上了 443：
+
+```bash
+sudo systemctl is-active nginx; sudo ss -lntp | grep ':443'; curl -sI http://127.0.0.1/ | head -n 3
+```
+
+若 `ss` 看不到 443 或 nginx 不是 active，**立即**执行 `sudo rm -f /etc/nginx/conf.d/qingjian.conf && sudo nginx -t && sudo systemctl reload nginx` 把宿主 nginx 恢复到改动前状态，然后回报，不要反复重试。
+
+若两侧分工、只由你负责宿主 nginx，则对方先跑部署仓那条，你跑这条（同样带失败回滚）：
 
 ```bash
 # 对方（部署仓侧）
 cd /opt/cube-deploy && git pull && sudo bash scripts/gen-origin-cert.sh && sudo docker compose up -d
 
-# 你（宿主 nginx 侧）
-sudo cp -a /etc/nginx /etc/nginx.bak-$(date +%F-%H%M%S) && sudo cp /opt/cube-deploy/host-nginx/qingjian.conf /etc/nginx/conf.d/qingjian.conf && sudo nginx -t && sudo systemctl reload nginx
+# 你（宿主 nginx 侧，加固版）
+sudo cp -a /etc/nginx /etc/nginx.bak-$(date +%F-%H%M%S) && sudo cp /opt/cube-deploy/host-nginx/qingjian.conf /etc/nginx/conf.d/qingjian.conf && if sudo nginx -t; then sudo systemctl reload nginx; else sudo rm -f /etc/nginx/conf.d/qingjian.conf; echo '[回滚] nginx -t 未通过，已删除新增配置'; false; fi
 ```
 
-**顺序不能反**：先让容器重建（释放宿主 443），再让宿主 nginx reload 占上 443。当前线上容器并没有 443 映射，所以实际不会有空窗；若对方此前已误跑过旧方案，`docker compose up -d` 与 `reload` 之间会有几秒 521，属正常。
+**顺序不能反**：先让容器重建（释放宿主 443），再让宿主 nginx reload 占上 443。当前线上容器并没有 443 映射，所以实际不会有空窗；若此前已误跑过旧方案，`docker compose up -d` 与 `reload` 之间会有几秒 521，属正常。
 
-`nginx -t` 若报 `a duplicate default server for 0.0.0.0:443`：删掉配置里那段「兜底」server，或去掉其 `listen` 中的 `default_server` 字样后重试。
+`nginx -t` 若报 `a duplicate default server for 0.0.0.0:443`：**优先只去掉 443 兜底块 `listen` 里的 `default_server` 字样，不要整段删。** 兜底块在文件里排在所有 443 server 之前，去掉显式标记后它仍是 443 的默认服务器，`return 444` 照样生效；整段删会让 IP 直连 HTTPS 落到主站 server，反而暴露站点。若去掉后仍冲突，停下来回报，不要继续试。
 
 ### 4.3 防火墙（腾讯云轻量控制台，外部动作）
 
@@ -227,13 +252,14 @@ server {
 | 4 | `curl -sI http://127.0.0.1:8081/` | 200 |
 | 5 | `curl -skI --resolve qingjiansmart.com:443:127.0.0.1 https://qingjiansmart.com/ \| head -n 8` | 200，返回公司主页；`-k` 因自签证书，**DNS 未切也能验** |
 | 6 | `curl -sk --resolve cube.qingjiansmart.com:443:127.0.0.1 https://cube.qingjiansmart.com/healthz` | `{"ok":true,...}`，证明分流 + 反代链路通 |
-| 7 | `curl -sI http://127.0.0.1:8080/ \| head -n 3` | 航迹仍 200，未受影响 |
-| 8 | `curl -skI --resolve qingjiansmart.com:80:127.0.0.1 http://qingjiansmart.com/ \| head -n 3` | 301 到 https |
-| 9 | `curl -skI https://43.155.178.13/ \| head -n 3` | 连接被断开（444 兜底生效） |
-| 10 | DNS 生效后浏览器开两个域名 | 页面正常、地址栏有锁、`http://` 自动跳 https |
-| 11 | 注册 / 登录 / 成就 / 成绩卡走一遍 | 功能正常，`/api/` 同源反代无 CORS 报错 |
+| 7 | `curl -sI http://127.0.0.1/ \| head -n 6` | **宿主 80 的 Flarum 论坛仍 200**（`X-Powered-By: Flarum`），这是最直接的既有服务回查 |
+| 8 | `curl -sI http://127.0.0.1:8080/ \| head -n 3` | 航迹仍 200，未受影响 |
+| 9 | `curl -skI --resolve qingjiansmart.com:80:127.0.0.1 http://qingjiansmart.com/ \| head -n 3` | 301 到 https |
+| 10 | `curl -skI https://43.155.178.13/ \| head -n 3` | 连接被断开（444 兜底生效） |
+| 11 | DNS 生效后浏览器开两个域名 | 页面正常、地址栏有锁、`http://` 自动跳 https |
+| 12 | 注册 / 登录 / 成就 / 成绩卡走一遍 | 功能正常，`/api/` 同源反代无 CORS 报错 |
 
-第 5、6 条是本方案最关键的验收：**不需要等 DNS 生效**就能证明宿主分流和容器反代都正确。
+第 5、6 条证明宿主分流与容器反代正确（**不需要等 DNS 生效**）；第 7、8 条证明既有服务没被误伤，其中**第 7 条优先级最高**——Flarum 就跑在本次改动的那个宿主 nginx 上，航迹 8080 是独立容器，反而不会被 nginx 配置直接影响。
 
 ---
 
@@ -261,7 +287,8 @@ cd /opt/cube-deploy && git checkout <旧commit> && sudo docker compose up -d
 
 | 项 | 约定 |
 | :--- | :--- |
-| 既有配置 | 不修改、不删除；本次是纯增量 |
+| 既有配置 | 不修改、不删除；本次是纯增量。宿主 80 上有**在用的 Flarum 论坛**，它是这条红线真正要保护的对象 |
+| 上线命令 | 必须用 4.2 加固版：`nginx -t` 失败自动删除新增配置，绝不允许坏配置留在 `conf.d/` 里，等下一次 reload / restart 把宿主 nginx 和 Flarum 一起拖挂 |
 | `cube-auth` | 不映射宿主端口，只经 `/api/` 同源反代可达 |
 | CSP | 不照抄航迹；portal 用与魔方站相同的 self + unsafe-inline 策略 |
 | HSTS | **暂不启用**。一旦下发就不可逆，等正式证书 + 灰云直连稳定后再评估 |
@@ -276,20 +303,21 @@ cd /opt/cube-deploy && git checkout <旧commit> && sudo docker compose up -d
 ## 12 可直接转交的提示词（给接手方）
 
 ```text
-你要在一台腾讯云轻量服务器（首尔，43.155.178.13，Ubuntu 22.04）上，把青简站点的域名分流与 TLS 从 cube-web 容器上移到宿主 nginx，宿主 nginx 做统一入口。同机还运行「航迹 WingTrace」容器（8080:80），宿主 80 上另有既有 nginx 服务。
+你要在一台腾讯云轻量服务器（首尔，43.155.178.13，Ubuntu 22.04）上，把青简站点的域名分流与 TLS 从 cube-web 容器上移到宿主 nginx，宿主 nginx 做统一入口。同机还运行「航迹 WingTrace」容器（8080:80）；宿主 80 上另有既有且**在用的 Flarum 论坛**（nginx/1.18.0 + X-Powered-By: Flarum），是本次最不能碰的服务。
 
-现状：宿主 443 空闲；cube-web 目前只映射 8081:80；部署仓在 /opt/cube-deploy（weopenfire-git/cube-teaching-site）；登录后端 cube-auth 无宿主端口映射，只在 docker 内网可达。
+现状：宿主 443 是否空闲须以服务器内 ss -lntp 为准（公网 https 超时只说明防火墙未放行）；cube-web 目前只映射 8081:80；部署仓在 /opt/cube-deploy（weopenfire-git/cube-teaching-site）；登录后端 cube-auth 无宿主端口映射，只在 docker 内网可达。
 
 硬约束：
 1. 不修改、不删除宿主 nginx 的任何既有 server 块，只新增一个 conf.d 文件；80 的既有 default_server 保持不动，新文件的 80 server 不带 default_server。
-2. 不占用、不停用航迹的 8080，不进入 /opt/wingtrace-deploy，不覆盖容器名 wingtrace。
+2. 不占用、不停用航迹的 8080，不进入 /opt/wingtrace-deploy，不覆盖容器名 wingtrace；更不能影响宿主 80 的 Flarum 论坛。
 3. 目标：按 server_name 分流 qingjiansmart.com / www 到公司主页静态目录 /opt/cube-deploy/portal；cube.qingjiansmart.com 反代到 127.0.0.1:8081；未知 Host 的 443 用 444 拒绝；80 上带域名的请求 301 跳 HTTPS。
 4. TLS 在宿主 nginx 终结，证书路径 /opt/cube-deploy/ssl/origin.crt|key（脚本 gen-origin-cert.sh 生成，自签）。Cloudflare 橙云阶段用 Full 模式，不能选 Full strict。
 5. 安全响应头不要照抄航迹（航迹 CSP 有 form-action 'none'，会拦登录 API）；portal 由宿主下发，cube 子域由容器内 nginx 下发，宿主层不要给 cube 子域写 add_header，避免重复 CSP。
 6. 不启用 HSTS。cube-auth 不映射宿主端口。
 7. 操作通道是腾讯云控制台 OrcaTerm，只能输出可直接粘贴的单行命令；不要设计需要编辑器交互的流程。改前先备份 /etc/nginx，改后用 nginx -t 校验再 reload（不要 restart）。
+8. 上线命令必须带「nginx -t 失败自动 rm -f 掉刚复制的 conf 文件」的回滚。否则坏配置留在 conf.d 里，当前进程虽然没事，但下次 reload / restart / 服务器重启会把宿主 nginx 和 80 上的 Flarum 一起拖挂。
 
-交付：先给只读体检命令并判断 80 是不是系统 nginx、443 是否空闲；再给配置全文与上线命令；最后给验收清单（必须包含 curl --resolve 本机验收、以及确认航迹 8080 仍 200）和回滚步骤。完整说明见部署仓 宿主nginx统一入口改造-交接说明.md 与 host-nginx/qingjian.conf。
+交付：先给只读体检命令并判断 80 是不是系统 nginx、443 是否空闲、目标 conf 是否已存在；再给配置全文与带失败回滚的上线命令；最后给验收清单（必须包含 curl --resolve 本机验收、确认宿主 80 的 Flarum 仍 200、航迹 8080 仍 200）和回滚步骤。完整说明见部署仓 宿主nginx统一入口改造-交接说明.md 与 host-nginx/qingjian.conf。
 ```
 
 ---

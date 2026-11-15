@@ -60,11 +60,13 @@ curl -s http://127.0.0.1:8081/healthz && echo && curl -sI http://127.0.0.1:8081/
 
 > `gen-origin-cert.sh` 生成 `ssl/origin.crt|key`，宿主 nginx 的 `qingjian.conf` 引用它们。必须先跑，否则 `nginx -t` 会因找不到证书失败。幂等，重复跑会跳过。
 
-安装宿主 nginx 分流（**先备份，先重建容器释放 443，再 reload**）：
+安装宿主 nginx 分流（**先备份，先重建容器释放 443，再 reload**）。命令带 `nginx -t` 失败自动删除新增配置的回滚——宿主 80 上跑着在用的 Flarum 论坛，绝不能让坏配置留在 `conf.d/` 里等下一次 reload 把 nginx 和论坛一起拖挂：
 
 ```bash
-cd /opt/cube-deploy && git pull && sudo bash scripts/gen-origin-cert.sh && sudo cp -a /etc/nginx /etc/nginx.bak-$(date +%F-%H%M%S) && sudo docker compose up -d && sudo cp host-nginx/qingjian.conf /etc/nginx/conf.d/qingjian.conf && sudo nginx -t && sudo systemctl reload nginx
+cd /opt/cube-deploy && git pull && sudo bash scripts/gen-origin-cert.sh && sudo cp -a /etc/nginx /etc/nginx.bak-$(date +%F-%H%M%S) && sudo docker compose up -d && sudo cp host-nginx/qingjian.conf /etc/nginx/conf.d/qingjian.conf && if sudo nginx -t; then sudo systemctl reload nginx; else sudo rm -f /etc/nginx/conf.d/qingjian.conf; echo '[回滚] nginx -t 未通过，已删除新增配置，宿主 nginx 未 reload'; false; fi && sudo docker ps --filter name=cube-web --format '{{.Status}}'
 ```
+
+跑完补一条只读收尾检查：`sudo systemctl is-active nginx; sudo ss -lntp | grep ':443'; curl -sI http://127.0.0.1/ | head -n 3`（最后一行的 `X-Powered-By: Flarum` 用于确认既有论坛没被影响）。详见交接说明第 4.2 节。
 
 腾讯云轻量控制台 → 实例 → 防火墙 → 放行 TCP **443**（8081 规则保留）。
 
@@ -74,7 +76,7 @@ cd /opt/cube-deploy && git pull && sudo bash scripts/gen-origin-cert.sh && sudo 
 cd /opt/cube-deploy && git pull && sudo docker compose up -d --build
 ```
 
-若 `host-nginx/qingjian.conf` 也改了，追加 `sudo cp host-nginx/qingjian.conf /etc/nginx/conf.d/qingjian.conf && sudo nginx -t && sudo systemctl reload nginx`。`site/` 与 `portal/` 是 bind mount，`git pull` 即生效，无需重建容器。
+若 `host-nginx/qingjian.conf` 也改了，**不要在这条命令后面追加裸的 `cp && nginx -t && reload`**（`nginx -t` 失败会把坏配置留在 `conf.d/`）。回到交接说明第 4.2 节重新走一遍带失败回滚的上线流程，并先备份 `/etc/nginx`。`site/` 与 `portal/` 是 bind mount，`git pull` 即生效，无需重建容器。
 
 **Cloudflare 控制台（外部动作，DNS 最后切）**：Add a Site → Free → 改 NS → 三条记录（橙云）`A @ → 43.155.178.13`、`A cube → 43.155.178.13`、`CNAME www → qingjiansmart.com` → SSL/TLS 设 **Full**。不要加 `windborne`（Workers 独立）或 `auth`（走 cube 子域同源反代）。
 
@@ -89,7 +91,7 @@ cd /opt/cube-deploy && git pull && sudo docker compose up -d --build
 | 3 | `curl -s http://127.0.0.1:8081/healthz` | `{"ok":true,...}` |
 | 4 | `curl -skI --resolve qingjiansmart.com:443:127.0.0.1 https://qingjiansmart.com/ \| head -n 8` | 200 公司主页（`-k` 因自签证书，DNS 未切也能验） |
 | 5 | `curl -sk --resolve cube.qingjiansmart.com:443:127.0.0.1 https://cube.qingjiansmart.com/healthz` | `{"ok":true,...}` |
-| 6 | `curl -sI http://127.0.0.1:8080/ \| head -n 3` | 航迹仍 200 |
+| 6 | `curl -sI http://127.0.0.1/ \| head -n 6` 与 `curl -sI http://127.0.0.1:8080/ \| head -n 3` | 宿主 80 的 Flarum 论坛（既有服务，优先级最高）与航迹 8080 都仍 200 |
 | 7 | 公网浏览器打开两个域名 | 页面正常、有锁、http 自动跳 https |
 | 8 | 注册 / 登录 / 成就 / 成绩卡 | 走通，`/api/` 无 CORS 报错 |
 
