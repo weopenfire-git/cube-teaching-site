@@ -476,8 +476,57 @@
     return n;
   }
 
+  /* ---------------- 闯关练习关卡定义（v1.5.0） ----------------
+   * 铁律：每个起点都必须是真实演示状态，绝不编造、绝不随机打乱。
+   * 预备 3 关取第 1 课情况 1 的 states[] 中 crossArms = 1/2/3 第一次出现的帧；
+   * 其余 22 关直接取每个演示的 startState（前序成果真保留、本课目标真没拼好）。
+   * -1 是公式执行中前序成果被临时破坏的哨兵帧，抽帧时必须排除。 */
+  function buildLevelDefs() {
+    var defs = [];
+    var d1 = buildDemo(0, 0), g1 = STAGE_GOAL[1];
+    [1, 2, 3].forEach(function (v, i) {
+      var idx = -1;
+      for (var k = 0; k < d1.states.length; k++) {
+        if (g1.fn(d1.states[k]) === v) { idx = k; break; }
+      }
+      if (idx < 0) return;   // 该进度帧不存在就跳过，不许编造
+      defs.push({
+        seg: '预备起步', lesson: 1, caseIdx: 0,
+        title: '预备 ' + (i + 1) + '：只差 ' + (4 - v) + ' 条白棱',
+        desc: '白十字已经拼好 ' + v + ' / 4 条棱，把剩下的补齐就行',
+        start: d1.states[idx].slice(), tokens: d1.tokens.slice(idx),
+        startProgress: v
+      });
+    });
+    LESSONS.forEach(function (lesson, li) {
+      lesson.cases.forEach(function (c, ci) {
+        var d = buildDemo(li, ci);
+        defs.push({
+          seg: lesson.badge, lesson: lesson.id, caseIdx: ci,
+          title: lesson.badge + ' ' + lesson.name + ' / ' + c.title,
+          desc: c.spot || lesson.goalLabel,
+          start: d.startState.slice(), tokens: d.tokens.slice(),
+          startProgress: d.goalStart
+        });
+      });
+    });
+    return defs.map(function (x, i) {
+      var g = STAGE_GOAL[x.lesson];
+      x.no = i + 1;
+      x.goalName = g.label;
+      x.goalTarget = g.target;
+      x.goalFn = g.fn;
+      x.final = (i === defs.length - 1);
+      return x;
+    });
+  }
+  var LEVEL_DEFS = buildLevelDefs();
+  function levelDef(no) { return LEVEL_DEFS[no - 1] || null; }
+  function buildLevelStates() { return LEVEL_DEFS.map(function (x) { return x.start.slice(); }); }
+
   var API = {
     LEVELS: LEVELS, LESSONS: LESSONS, buildDemo: buildDemo,
+    LEVEL_DEFS: LEVEL_DEFS, levelDef: levelDef, buildLevelStates: buildLevelStates,
     inverseAlg: inverseAlg, expand: expand, diagramData: diagramData, whiteOnD: whiteOnD,
     focus3d: focus3d, stageState: stageState, stageGoal: function (id) { return STAGE_GOAL[id]; },
     wrongStickers: wrongStickers

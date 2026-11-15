@@ -95,10 +95,10 @@
 echo "=== 端口 ==="; sudo ss -lntp | grep -E ':80|:443|:8080|:8081'; echo "=== 系统 nginx ==="; sudo nginx -v 2>&1; sudo grep -nE 'include|conf.d|sites-enabled' /etc/nginx/nginx.conf; echo "=== 现有 default_server ==="; sudo grep -rn 'default_server' /etc/nginx/ 2>/dev/null | head -n 20; echo "=== 航迹存活 ==="; curl -sI http://127.0.0.1:8080/ | head -n 3
 ```
 
-建议**另起一行**再补三条只读检查（不混入主命令，输出更清晰）：
+建议**另起一行**再补四条只读检查（不混入主命令，输出更清晰）：
 
 ```bash
-echo "=== 目标文件是否已存在 ==="; sudo ls -l /etc/nginx/conf.d/qingjian.conf 2>&1; echo "=== conf.d 现有文件 ==="; sudo ls -1 /etc/nginx/conf.d/; echo "=== 部署仓 HEAD ==="; git -C /opt/cube-deploy rev-parse --short HEAD
+echo "=== 目标文件是否已存在 ==="; sudo ls -l /etc/nginx/conf.d/qingjian.conf 2>&1; echo "=== conf.d 现有文件 ==="; sudo ls -1 /etc/nginx/conf.d/; echo "=== 部署仓 HEAD ==="; git -C /opt/cube-deploy rev-parse --short HEAD; echo "=== 部署仓本地改动 ==="; git -C /opt/cube-deploy status --short
 ```
 
 **已知环境事实（公网旁证，不能替代服务器内体检）**：宿主 80 是 `nginx/1.18.0 (Ubuntu)`，上面跑着**在用的 Flarum 论坛**（`X-Powered-By: Flarum` + `flarum_session` cookie）。它既不属于航迹容器、也不属于本项目，是宿主机上既有且必须原样保留的服务——这正是「不动既有 server 块、纯增量」成为第一红线的原因。公网 `https://43.155.178.13/` 超时，说明 443 尚未被防火墙放行，**不能据此判定 443 空闲**，必须看服务器内 `ss -lntp` 的输出。
@@ -109,7 +109,17 @@ echo "=== 目标文件是否已存在 ==="; sudo ls -l /etc/nginx/conf.d/qingjia
 - `80` 是别的服务（Apache / Node / 另一套 nginx 实例）→ **停下并反馈**，不要继续。此时「宿主 nginx 统一入口」的前提不成立，需先决定是否换成 nginx，或退回旧的容器 443 方案。
 - `443` 已有监听 → 停下并反馈，需要先查清归属，避免抢端口。
 - `/etc/nginx/conf.d/qingjian.conf` **已存在** → 停下并反馈。4.2 的失败回滚会 `rm -f` 这个文件；若先前装过同名配置，先把原文件另存备份再执行。
-- 部署仓 HEAD 与预期不符 → 把实际 commit 发回核对，确认 `host-nginx/qingjian.conf` 与已审核版本一致再走。
+- **HEAD 判定口径（防止误停）**：这条体检跑在 `git pull` **之前**，服务器上 HEAD 通常还是旧 commit，属正常。`e790d9c` 或 `ab4b0ca` 都直接通过（两者 `qingjian.conf` blob 一致）；更早的 commit 把编号发回、核对该版本下的配置 blob 再定。真正要停的是 **`git pull` 失败** 或 **拉到的 `qingjian.conf` blob 变了**，不是「HEAD 不是最新」。`status --short` 用于提前发现会阻断 `git pull` 的本地改动。
+
+**放行判定表（5 条全成立才放行 4.2，任一不成立就停）：**
+
+| # | 前提 | 不成立时 |
+| :--- | :--- | :--- |
+| 1 | 宿主 80 进程是系统 nginx | 停，反馈输出 |
+| 2 | `nginx.conf` 含 `include /etc/nginx/conf.d/*.conf;` | 停，反馈输出 |
+| 3 | 443 无监听 | 停，反馈输出 |
+| 4 | `/etc/nginx/conf.d/qingjian.conf` 不存在（`ls -l` 报 No such file） | 停，先备份原文件再议 |
+| 5 | HEAD 符合上述口径、`status --short` 无会阻断 pull 的改动 | 停，把 commit 号与改动清单发回核对 |
 
 ### 4.1 备份（必须）
 
