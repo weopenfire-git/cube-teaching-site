@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="color-scheme" content="light">
 <meta name="supported-color-schemes" content="light">
-<title>教学型魔方 v1.0.0 分级课程与 3D 连续拧转</title>
+<title>教学型魔方 分级课程与 3D 连续拧转</title>
 <meta name="theme-color" content="#FFFFFF">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -339,8 +339,9 @@
   #drillPad{margin:0}
   /* 桌面自由练习沿用原来的 turnpad，避免重复键盘 */
   body.drill-mode-practice #drillDock{display:none}
-  /* v1.5.3 课程学习：桌面不出现操作坞，手机全屏态由媒体查询接管 */
-  body.drill-mode-lesson #drillDock{display:none}
+  /* v1.5.3 课程学习 / v1.5.4 自由求解：桌面不出现操作坞，手机全屏态由媒体查询接管 */
+  body.drill-mode-lesson #drillDock,
+  body.drill-mode-solve #drillDock{display:none}
   body:not(.drill-full) #dockList,
   body:not(.drill-full) #classListBtn,
   body:not(.drill-full) #levelListBtn{display:none}
@@ -368,11 +369,6 @@
     body.drill-full .leftcol details.aux,
     body.drill-full .viewhead .viewbtns,
     body.drill-full .modehint,
-    body.drill-full .modebar #modeSolve,
-    body.drill-full .modebar #modePractice,
-    body.drill-full .modebar #btnNotation,
-    body.drill-full .modebar #btnHelp,
-    body.drill-full .auth-area,
     body.drill-full #turnpad,
     body.drill-full .prac-bar,
     body.drill-full .prac-sub,
@@ -380,8 +376,15 @@
     body.drill-full #listwrapPrac,
     body.drill-full .card h2,
     body.drill-full .sectionline{display:none!important}
-    body.drill-full .modebar{flex:0 0 auto;flex-wrap:nowrap;gap:5px;padding:6px 8px;margin:0;box-shadow:0 1px 0 rgba(22,32,47,.08)}
-    body.drill-full .modebar .mode-main{flex:1;min-width:0;padding:8px 4px;font-size:12px}
+    body.drill-full .modebar{flex:0 0 auto;flex-wrap:wrap;row-gap:4px;padding:6px 8px;margin:0;box-shadow:0 1px 0 rgba(22,32,47,.08)}
+    body.drill-full .modebar .mode-main{flex:1 0 27%;min-width:0;padding:8px 4px;font-size:12px}
+    /* v1.5.4 工具按钮不再隐藏：展开时第二行全部可见（自由求解/自由练习/符号说明/怎么用/登录） */
+    body.drill-full .modebar #modeSolve,
+    body.drill-full .modebar #modePractice,
+    body.drill-full .modebar #btnNotation,
+    body.drill-full .modebar #btnHelp{flex:1 0 21%;height:30px;font-size:11.5px;padding:0 4px;white-space:nowrap}
+    body.drill-full .modebar .auth-area{display:inline-flex;flex:1 0 21%;align-items:center;gap:4px;margin:0}
+    body.drill-full .modebar .auth-area button{flex:1;min-width:0;height:30px;font-size:11.5px;padding:0 4px}
     body.drill-full main{flex:1 1 auto;display:flex;flex-direction:column;gap:0;min-height:0;overflow:hidden}
     body.drill-full main>section{flex:0 0 0;overflow:hidden}
     body.drill-full .card{padding:0;background:none;margin:0;border-radius:0}
@@ -429,9 +432,15 @@
       border-radius:8px;background:var(--soft);color:var(--blue-deep)}
     body.drill-full .drill-now{display:none;flex:1;min-width:0;align-items:center;
       font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    body.drill-bar-collapsed.drill-full .modebar{padding:4px 8px;gap:6px;min-height:0}
+    body.drill-bar-collapsed.drill-full .modebar{padding:4px 8px;gap:6px;min-height:0;flex-wrap:nowrap}
     body.drill-bar-collapsed.drill-full .modebar .mode-main{display:none}
+    body.drill-bar-collapsed.drill-full .modebar #modeSolve,
+    body.drill-bar-collapsed.drill-full .modebar #modePractice,
+    body.drill-bar-collapsed.drill-full .modebar #btnNotation,
+    body.drill-bar-collapsed.drill-full .modebar #btnHelp,
+    body.drill-bar-collapsed.drill-full .modebar .auth-area{display:none}
     body.drill-bar-collapsed.drill-full .drill-now{display:flex;cursor:pointer}
+    body.drill-bar-collapsed.drill-full #drillBarToggle{height:24px;padding:0 7px;font-size:10.5px}
     /* v1.5.1 ② 转法键盘可收起：收起后操作坞只剩状态行与一行操作键 */
     body.drill-full .dock-pad-toggle{display:block;position:absolute;top:5px;right:8px;z-index:2;
       height:26px;padding:0 8px;font-size:11px;border-radius:7px;background:var(--soft);color:var(--blue-deep)}
@@ -441,24 +450,37 @@
     /* ③ 键盘收起后，把省下的高度让给画布而不是留白 */
     body.drill-full #drillDock{position:fixed}
 
-    /* v1.5.3 课程学习也进全屏：底部操作坞放播放控制，课程内容收进浮层 */
+    /* v1.5.4 课程学习 / 自由求解都进全屏：底部操作坞放播放控制，内容收进浮层 */
     body.drill-mode-lesson #drillPad,
     body.drill-mode-lesson #dockPadToggle,
     body.drill-mode-lesson #dockUndo,
     body.drill-mode-lesson #dockReset,
     body.drill-mode-lesson #dockHint,
     body.drill-mode-lesson #dockList,
-    body.drill-mode-lesson #dockExit{display:none}
-    body.drill-mode-lesson #dockLessonActs{display:flex}
-    body.drill-full.drill-mode-lesson #dockLessonActs button{flex:1 1 30%;min-width:96px;height:36px;font-size:12px}
-    body.drill-mode-lesson .dock-status{white-space:normal}
-    body.drill-full.drill-mode-lesson #lessonPanel.on{display:block;position:fixed;
+    body.drill-mode-lesson #dockExit,
+    body.drill-mode-solve #drillPad,
+    body.drill-mode-solve #dockPadToggle,
+    body.drill-mode-solve #dockUndo,
+    body.drill-mode-solve #dockReset,
+    body.drill-mode-solve #dockHint,
+    body.drill-mode-solve #dockList,
+    body.drill-mode-solve #dockExit{display:none}
+    body.drill-mode-lesson #dockLessonActs,
+    body.drill-mode-solve #dockLessonActs{display:flex}
+    body.drill-full.drill-mode-lesson #dockLessonActs button,
+    body.drill-full.drill-mode-solve #dockLessonActs button{flex:1 1 30%;min-width:96px;height:36px;font-size:12px}
+    body.drill-mode-lesson .dock-status,
+    body.drill-mode-solve .dock-status{white-space:normal}
+    body.drill-full.drill-mode-lesson #lessonPanel.on,
+    body.drill-full.drill-mode-solve #solvePanel.on{display:block;position:fixed;
       left:8px;right:8px;top:calc(58px + env(safe-area-inset-top));
       bottom:calc(var(--dock-h,210px) + 8px);overflow:auto;z-index:130;
       background:#fff;border-radius:12px;padding:10px 12px 4px;
       box-shadow:0 10px 34px rgba(22,32,47,.24)}
-    body.drill-full.drill-mode-lesson #lessonPanel.on .card{background:none;padding:0 0 8px;margin:0}
-    body.drill-full.drill-mode-lesson #lessonPanel.on .card h2{display:block;font-size:14px;margin-bottom:8px}
+    body.drill-full.drill-mode-lesson #lessonPanel.on .card,
+    body.drill-full.drill-mode-solve #solvePanel.on .card{background:none;padding:0 0 8px;margin:0}
+    body.drill-full.drill-mode-lesson #lessonPanel.on .card h2,
+    body.drill-full.drill-mode-solve #solvePanel.on .card h2{display:block;font-size:14px;margin-bottom:8px}
   }
   /* 矮屏（小屏手机 / 横屏）：再压一档，保证一屏装得下 */
   @media(max-width:820px) and (max-height:660px){
@@ -482,7 +504,7 @@
       <p class="sub">一课只解决一个单点问题：先给总体公式，再对照魔方图示找自己的情况，最后逐转跟着做。</p>
       <div class="statbar" id="statbar"></div>
     </div>
-    <span class="ver">v1.5.3 2026-11-16</span>
+    <span class="ver">v1.5.4 2026-11-16</span>
   </header>
 
   <div class="modebar">
@@ -613,6 +635,8 @@
           <div class="listwrap" id="listwrap"></div>
         </div>
       </div>
+      <!-- v1.5.4 自由求解手机全屏时操作坞的挂载点 -->
+      <div class="dock-slot" id="solveDockSlot"></div>
 
       <!-- ===== 个人练习模式 ===== -->
       <div id="practicePanel" hidden>
@@ -657,7 +681,7 @@
                 <button id="dockList">☰ 选关</button>
                 <button id="dockExit">返回课程</button>
               </div>
-              <!-- v1.5.3 课程学习全屏专用：同一套播放控制收进操作坞，桌面隐藏 -->
+              <!-- v1.5.3 课程 / v1.5.4 求解全屏专用：同一套播放控制收进操作坞，桌面隐藏 -->
               <div class="dock-actions" id="dockLessonActs" hidden>
                 <button id="dockLPrev">◀ 上一段</button>
                 <button id="dockLPlay" class="primary">▶ 播放</button>
@@ -665,6 +689,7 @@
                 <button id="dockLReset">⏮ 重置</button>
                 <button id="dockLTurnPrev">|◀ 退一转</button>
                 <button id="dockLTurnNext" class="primary">单转下一格</button>
+                <button id="dockGray">🎨 看全色</button>
                 <button id="dockLCatalog">☰ 课程内容</button>
               </div>
             </div>
@@ -731,6 +756,7 @@
   </main>
 
   <footer>
+    <b>v1.5.4：</b><b>手机全屏补漏</b>：① 顶栏展开时两行排满——课程 / 课堂 / 闯关三个标签 + 自由求解、自由练习、符号说明、怎么用、登录全都在，收起后才是细条，高度明显不同；② 新增「🎨 看全色 / 🎯 看重点」切换键固定在操作坞，灰块演示看腻了随时切彩色，选择会被记住，换情况不再被重置；③ 「⚡ 自由求解」手机上也进全屏，解题步骤收进「☰ 解题步骤」浮层；④ 浏览器标题去掉写死的 v1.0.0，不再误导师版本。<br>
     <b>v1.5.3：</b><b>课程学习手机全屏</b>：手机竖屏进课程学习也一屏装下——顶部标签可收起，底部固定操作坞放「上一段 / 播放 / 下一段 / 重置 / 退一转 / 单转下一格」，当前转到第几转常驻可见；课程目录与本课讲解收进「☰ 课程内容」浮层，随开随关，魔方不再被顶栏挤出屏幕。<br>
     <b>v1.5.2：</b>闯关<b>起步梯度重做</b>：第 1 关只差一条白棱、拧一下就补上，第 2 关先转顶层对准再翻下，第 3 关让位插入回正，第 4 关缺两条棱；四个起点都从第 1 课真实终点倒做，参考解经最优距离校验，没有假步数。闯关时目标写得更明白（「目标 白十字 4/4，现在 3/4」，非末关不用六面复原）。<br>
     <b>v1.5.1：</b>手机竖屏再优化：<b>顶部标签可收起</b>（收起后只留一条细条显示当前模式与关卡）、<b>转法键盘可收起</b>（收起后只留状态行和一行操作键），两种收起状态浏览器会记住。补上刘海屏安全区与动态视口适配：地址栏伸缩、软键盘弹出、字体加载、横竖屏切换都会自动重算，魔方不会被底部操作坞挡住。另外声明浅色配色，避免部分手机浏览器夜间模式把页面强制反色成黑底。<br>
@@ -902,6 +928,9 @@
   var needDraw = true, lastTs = 0;
   var cells = [], faceEls = {};
   var grayMode = true;   // 七课默认开启「突出块显示」：已完成 + 当前目标保色，其余打上斜线
+  var userGray = true;   // v1.5.4 用户对灰块显示的选择：换情况 / 换课不再被重置，还记进 localStorage
+  try { userGray = localStorage.getItem('cubeUserGray') !== '0'; } catch (e) {}
+  function saveUserGray() { try { localStorage.setItem('cubeUserGray', userGray ? '1' : '0'); } catch (e) {} }
   var VIEWS = {
     iso:    { yaw: -32, pitch: 24, zoom: 1, label: 'U / F / R 三面可见' },
     front:  { yaw: 0,   pitch: 8,  zoom: 1, label: '正视 F 面' },
@@ -1055,6 +1084,8 @@
       $('btnGray').classList.toggle('on', !!grayMode);
       $('btnGray').textContent = grayMode ? '只看有效块 ✓' : '看全色';
     }
+    var dg = $('dockGray');   // v1.5.4 全屏操作坞里的灰块/全色切换键
+    if (dg) dg.textContent = grayMode ? '🎨 看全色' : '🎯 看重点';
     if (isDrill(mode)) { renderer.setFocus(null); needDraw = true; return; }   // 练习类模式：全色，自己转
     if (mode === 'lesson' && grayMode && demo) {
       if (!focusMasks) focusMasks = buildFocusMasks(demo, lessonIdx);
@@ -1334,7 +1365,8 @@
     $('turnCounter').textContent = '第 ' + frame + ' / ' + n + ' 转';
     $('vpBadge').innerHTML = t ? (isY ? '整体旋转 <b>y</b>' : '正在拧 <b>' + t.charAt(0) + '</b> 面') : '拖拽可自由旋转视角';
     markFace(t);
-    if (mode === 'lesson') { highlightTurnRow(); if (document.body.classList.contains('drill-full')) renderDockStatus(); }
+    if (mode === 'lesson') highlightTurnRow();
+    if ((mode === 'lesson' || mode === 'solve') && document.body.classList.contains('drill-full')) renderDockStatus();
   }
 
   /* ---------- 播放状态机 ---------- */
@@ -1406,7 +1438,7 @@
     lessonIdx = Math.max(0, Math.min(L.LESSONS.length - 1, li));
     var les = L.LESSONS[lessonIdx];
     caseIdx = Math.max(0, Math.min(les.cases.length - 1, ci));
-    grayMode = true;   // 全课默认「突出块显示」：已完成与目标保色，其余打上斜线
+    grayMode = userGray;   // 尊重用户对灰块显示的选择（v1.5.4 起不再每次强制重置）
     demo = L.buildDemo(lessonIdx, caseIdx);
     focusMasks = null;                 // 换情况就按新公式重新逆推掩码
     resetPlay();
@@ -1518,15 +1550,16 @@
     // 个人练习没有「上一段 / 下一段」概念，把这两个分段按钮藏起来
     $('btnPrev').hidden = isDrill(m);
     $('btnNext').hidden = isDrill(m);
-    // v1.5.0：手机竖屏进入练习类模式自动切全屏；v1.5.3 课程学习同样全屏
+    // v1.5.0：手机竖屏进入练习类模式自动切全屏；v1.5.3 课程学习、v1.5.4 自由求解同样全屏
     document.body.classList.toggle('drill-mode-practice', m === 'practice');
     document.body.classList.toggle('drill-mode-class', m === 'class');
     document.body.classList.toggle('drill-mode-level', m === 'level');
     document.body.classList.toggle('drill-mode-lesson', m === 'lesson');
-    $('dockLessonActs').hidden = m !== 'lesson';   // 全局 [hidden]!important，只能用属性切换
-    document.body.classList.toggle('drill-full', (isDrill(m) || m === 'lesson') && isCompact());
+    document.body.classList.toggle('drill-mode-solve', m === 'solve');
+    $('dockLessonActs').hidden = !(m === 'lesson' || m === 'solve');   // 全局 [hidden]!important，只能用属性切换
+    document.body.classList.toggle('drill-full', (isDrill(m) || m === 'lesson' || m === 'solve') && isCompact());
     applyChromeState();
-    if (isDrill(m) || m === 'lesson') { mountDock(m); if (isDrill(m)) closeGridFloat(); }
+    if (isDrill(m) || m === 'lesson' || m === 'solve') { mountDock(m); if (isDrill(m)) closeGridFloat(); }
     else $('drillDock').hidden = true;
     if (m === 'lesson') {
       $('lessonPanel').classList.remove('on');   // 课程内容浮层默认收起
@@ -1544,6 +1577,9 @@
       selectCase(lessonIdx, caseIdx);
     } else if (m === 'solve') {
       $('modeHint').textContent = '任意打乱 → 自动七阶段层先法 → 逐转慢放';
+      $('solvePanel').classList.remove('on');   // 解题步骤浮层默认收起
+      $('dockLCatalog').textContent = '☰ 解题步骤';
+      renderDockStatus();
       applyFocus();   // 实战模式：恢复全色
       if (pendingSolve) { var ps = pendingSolve; pendingSolve = null; loadState(ps.state, ps.label); }
       else if (!result) load($('scramble').value); else { playing = true; syncPlayBtn(); goTo(0); }
@@ -1565,7 +1601,7 @@
       if (levelNo > levelUnlocked) levelNo = levelUnlocked;
       renderLevelGrid(); startLevel();
     }
-    if (isDrill(m) || m === 'lesson') { renderDockStatus(); syncDockHeight(); }
+    if (isDrill(m) || m === 'lesson' || m === 'solve') { renderDockStatus(); syncDockHeight(); }
     playing = !isDrill(m); syncPlayBtn(); needDraw = true;
     // 全屏切换改了画布尺寸，下一帧重算分辨率，避免 3D 视图拉伸或糊掉
     setTimeout(function () { renderer.resize(); needDraw = true; syncDockHeight(); }, 0);
@@ -1672,7 +1708,8 @@
   var drillTokens = [];
   function isCompact() { return !!(window.matchMedia && window.matchMedia('(max-width:820px)').matches); }
   function mountDock(m) {
-    var id = m === 'class' ? 'classDockSlot' : (m === 'level' ? 'levelDockSlot' : (m === 'lesson' ? 'lessonDockSlot' : 'practiceDockSlot'));
+    var id = m === 'class' ? 'classDockSlot' : (m === 'level' ? 'levelDockSlot' :
+      (m === 'lesson' ? 'lessonDockSlot' : (m === 'solve' ? 'solveDockSlot' : 'practiceDockSlot')));
     var slot = $(id), dock = $('drillDock');
     if (slot && dock.parentNode !== slot) slot.appendChild(dock);
     dock.hidden = false;
@@ -1695,6 +1732,7 @@
     if (mode === 'level') t += ' 第 ' + levelNo + ' / ' + L.LEVEL_DEFS.length + ' 关';
     else if (mode === 'class') t += ' 第 ' + (classLesson + 1) + ' 课';
     else if (mode === 'lesson') t += ' 第 ' + (lessonIdx + 1) + '/' + L.LESSONS.length + ' 课';
+    else if (mode === 'solve' && typeof steps !== 'undefined' && steps.length) t += ' 第 ' + (cur + 1) + '/' + steps.length + ' 段';
     $('drillNow').textContent = t;
   }
   function applyChromeState() {
@@ -1736,6 +1774,14 @@
       $('dockStatus').innerHTML = (demo ? '<b>' + demo.title + '</b>' : '课程演示') +
         '　第 <b>' + (lessonIdx + 1) + '/' + L.LESSONS.length + '</b> 课　第 <b>' + frame + ' / ' + lt.length + '</b> 转' +
         (anim ? '　正在拧 <b>' + anim.token + '</b>' : (frame >= lt.length && lt.length ? '　本段完成，可重看或换情况' : ''));
+      return;
+    }
+    if (mode === 'solve') {    // v1.5.4 求解全屏：常驻显示当前阶段
+      var st = (typeof result !== 'undefined' && result && steps[cur]) ?
+        result.STAGE_META.filter(function (x) { return x.id === steps[cur].stage; })[0] : null;
+      $('dockStatus').innerHTML = '自由求解　第 <b>' + Math.min(cur + 1, Math.max(steps.length, 1)) + ' / ' +
+        (steps.length || 0) + '</b> 段' + (st ? '　阶段 <b>' + st.id + '. ' + st.short + '</b>' : '') +
+        (anim ? '　正在拧 <b>' + anim.token + '</b>' : '');
       return;
     }
     if (!isDrill(mode)) return;
@@ -1944,9 +1990,9 @@
       $('vpBadge').innerHTML = v.label; needDraw = true;
     };
   });
-  $('btnGray').onclick = function () { grayMode = !grayMode; applyFocus(); };
+  $('btnGray').onclick = function () { grayMode = !grayMode; userGray = grayMode; saveUserGray(); applyFocus(); };
   window.addEventListener('resize', function () {
-    document.body.classList.toggle('drill-full', (isDrill(mode) || mode === 'lesson') && isCompact());
+    document.body.classList.toggle('drill-full', (isDrill(mode) || mode === 'lesson' || mode === 'solve') && isCompact());
     renderer.resize(); needDraw = true; drawCaseThumbnails(); syncDockHeight();
   });
   if (window.ResizeObserver) new ResizeObserver(function () { renderer.resize(); needDraw = true; }).observe(canvas);
@@ -2019,19 +2065,21 @@
   $('dockHint').onclick = drillHintToggle;
   $('dockList').onclick = toggleGridFloat;
   $('dockExit').onclick = drillExit;
-  /* v1.5.3 课程学习全屏：操作坞按钮与左栏原按钮走同一套逻辑 */
+  /* v1.5.3/4 课程与求解全屏：操作坞按钮与左栏原按钮走同一套逻辑 */
   $('dockLPrev').onclick = function () { $('btnPrev').click(); };
   $('dockLPlay').onclick = function () { $('btnPlay').click(); };
   $('dockLNext').onclick = function () { $('btnNext').click(); };
   $('dockLReset').onclick = function () { $('btnReset').click(); };
   $('dockLTurnPrev').onclick = function () { stepTurn(-1); };
   $('dockLTurnNext').onclick = function () { stepTurn(1); };
+  $('dockGray').onclick = function () { grayMode = !grayMode; userGray = grayMode; saveUserGray(); applyFocus(); };
   $('dockLCatalog').onclick = function () {
-    var el = $('lessonPanel');
+    var el = mode === 'solve' ? $('solvePanel') : $('lessonPanel');
     var on = !el.classList.contains('on');
     el.classList.toggle('on', on);
-    $('dockLCatalog').textContent = on ? '× 关闭内容' : '☰ 课程内容';
-    if (on) drawCaseThumbnails();   // 浮层刚展开时重画情况卡缩略图，避免按隐藏尺寸画空
+    $('dockLCatalog').textContent = on ? '× 关闭内容' :
+      (mode === 'solve' ? '☰ 解题步骤' : '☰ 课程内容');
+    if (on && mode === 'lesson') drawCaseThumbnails();   // 浮层刚展开时重画情况卡缩略图，避免按隐藏尺寸画空
     syncDockHeight();
   };
   $('pracNew').onclick = function () { pracNew(); };
@@ -2447,6 +2495,7 @@
     finishTurn: function () { if (anim) { anim.t = 1; commitTurn(); } },
     result: function () { return result; }, lessons: function () { return L; },
     focusMasks: function () { return focusMasks; },
+    gray: function () { return grayMode; },
     coverYaw: function () { return coverYaw; }, coverVisible: function () { return !coverEl.hidden; },
     coverPhase: function () { return coverPhase; }, coverClip: function () { return coverClip; },
     coverAnimating: function () { return !!coverAnim; },
