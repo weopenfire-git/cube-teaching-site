@@ -155,6 +155,30 @@
   .sw-focus{background:#F5C63A;box-shadow:0 0 0 2px #2563EB}
   .sw-hatch{background:repeating-linear-gradient(135deg,#E6ECF5 0 3px,#A9B7CC 3px 5px)}
   .caseintro{font-size:12.5px;color:#3F4A5C;background:#EAF1FA;border-radius:8px;padding:11px 14px;margin:11px 0 0;line-height:1.75}
+  /* v1.5.5 文字精简：大段说明收进 details，正文只留核心一两句 */
+  details.tips{margin:9px 0 2px;font-size:12px;line-height:1.7}
+  details.tips summary{display:inline-block;cursor:pointer;color:var(--blue-deep);font-weight:600;
+    padding:4px 12px;border-radius:14px;background:var(--blue-dim);list-style:none;user-select:none;font-size:12px}
+  details.tips summary::-webkit-details-marker{display:none}
+  details.tips summary:hover{background:#CFE0FC}
+  details.tips[open] summary{margin-bottom:7px}
+  .tipul{margin:4px 0 0;padding-left:19px;color:var(--muted)}
+  .tipul li{margin:5px 0}
+  .findhead{margin:6px 0 0;color:var(--muted)}
+  .findlist{list-style:none;margin:6px 0 2px;padding:0}
+  .findlist li{display:flex;align-items:center;gap:11px;cursor:pointer;padding:5px 9px;
+    border-radius:9px;background:#F4F7FC;margin:5px 0;line-height:1.5}
+  .findlist li:hover{background:#E7EFFB}
+  .findlist li.on{background:var(--blue-dim)}
+  .minidiag{display:block;width:54px;flex:none}
+  .minidiag .diag-net{width:100%}
+  .findtxt{color:var(--muted)}
+  .findtxt b{color:var(--blue-deep)}
+  .grip-core{margin:0;color:#3F4A5C}
+  .verfold{color:var(--muted)}
+  .verfold summary{cursor:pointer;color:var(--muted);user-select:none}
+  .verfold summary:hover{color:var(--blue-deep)}
+  .verfold[open]{padding-top:8px;line-height:1.75}
   .caseintro b{color:var(--text);font-weight:700}
   .stagenav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
   .chip{background:var(--soft);border-radius:20px;padding:6px 12px;font-size:12px;cursor:pointer;color:var(--muted);white-space:nowrap}
@@ -504,7 +528,7 @@
       <p class="sub">一课只解决一个单点问题：先给总体公式，再对照魔方图示找自己的情况，最后逐转跟着做。</p>
       <div class="statbar" id="statbar"></div>
     </div>
-    <span class="ver">v1.5.4 2026-11-16</span>
+    <span class="ver">v1.5.5 2026-11-16</span>
   </header>
 
   <div class="modebar">
@@ -756,7 +780,10 @@
   </main>
 
   <footer>
-    <b>v1.5.4：</b><b>手机全屏补漏</b>：① 顶栏展开时两行排满——课程 / 课堂 / 闯关三个标签 + 自由求解、自由练习、符号说明、怎么用、登录全都在，收起后才是细条，高度明显不同；② 新增「🎨 看全色 / 🎯 看重点」切换键固定在操作坞，灰块演示看腻了随时切彩色，选择会被记住，换情况不再被重置；③ 「⚡ 自由求解」手机上也进全屏，解题步骤收进「☰ 解题步骤」浮层；④ 浏览器标题去掉写死的 v1.0.0，不再误导师版本。<br>
+    <!-- v1.5.5：版本与实现说明是给关心迭代的人看的，普通用户不需要——整体收进默认折叠 -->
+    <details class="verfold">
+      <summary>ℹ️ 版本与实现说明（点开查看）</summary>
+    <b>v1.5.5：</b><b>文字精简</b>：正文只留核心一两句，大段说明收进「📖 详解」按钮并改成逐条 bullet；第 1 课「认情况」四条各配迷你俯视图，点一下直接切到对应情况卡。页脚版本记录折叠，不再占版面。<br>
     <b>v1.5.3：</b><b>课程学习手机全屏</b>：手机竖屏进课程学习也一屏装下——顶部标签可收起，底部固定操作坞放「上一段 / 播放 / 下一段 / 重置 / 退一转 / 单转下一格」，当前转到第几转常驻可见；课程目录与本课讲解收进「☰ 课程内容」浮层，随开随关，魔方不再被顶栏挤出屏幕。<br>
     <b>v1.5.2：</b>闯关<b>起步梯度重做</b>：第 1 关只差一条白棱、拧一下就补上，第 2 关先转顶层对准再翻下，第 3 关让位插入回正，第 4 关缺两条棱；四个起点都从第 1 课真实终点倒做，参考解经最优距离校验，没有假步数。闯关时目标写得更明白（「目标 白十字 4/4，现在 3/4」，非末关不用六面复原）。<br>
     <b>v1.5.1：</b>手机竖屏再优化：<b>顶部标签可收起</b>（收起后只留一条细条显示当前模式与关卡）、<b>转法键盘可收起</b>（收起后只留状态行和一行操作键），两种收起状态浏览器会记住。补上刘海屏安全区与动态视口适配：地址栏伸缩、软键盘弹出、字体加载、横竖屏切换都会自动重算，魔方不会被底部操作坞挡住。另外声明浅色配色，避免部分手机浏览器夜间模式把页面强制反色成黑底。<br>
@@ -774,6 +801,7 @@
     <b>图怎么来的：</b>每张情况卡的立体图与九宫格都由该情况的真实起始状态渲染，斜线阴影盖住本课不管的块，蓝框跟着本课要盯的那块贴纸走，不是画死的装饰图。<br>
     <b>中级 / 高级：</b>目录已列出大纲（F2L、2-look OLL/PLL、全公式与竞速），标注「规划中」，尚未实现，不假装做完。<br>
     <b>还没做：</b>六面照片识别、公式库检索、可分享状态链接、微信端适配、导出 MP4。求解与 3D 渲染全在本地，零外部依赖，<code>file://</code> 可直开。
+    </details>
   </footer>
 
   <!-- 新手引导（coach marks）：聚光灯 + 带箭头的话泡，指向关键按钮；遮罩不拦截点击，页面照常可操作 -->
@@ -1199,14 +1227,41 @@
     $('bigFormula').textContent = les.formula;
     $('principle').textContent = '口诀：' + les.principle;
     $('whyText').textContent = les.why;
-    $('hintLine').innerHTML = '<b>本课目标：</b>' + les.goalText + '<br><b>怎么用这个公式：</b>' + les.formulaHint;
+    $('hintLine').innerHTML = '<b>本课目标：</b>' + les.goalText +
+      '<details class="tips"><summary>📖 怎么用这个公式</summary><p style="margin:0">' + les.formulaHint + '</p></details>';
     $('startNote').innerHTML = '<b>本课起点 </b>' + les.startNote.replace(/^本课起点[：:]\s*/, '');
     $('startDiag').innerHTML = startDiagHtml(L.buildDemo(lessonIdx, caseIdx).startState, les.id);
-    $('diagTip').innerHTML = '<b>只看有效块：</b>' + les.focusNote +
-      '<br>' + les.diagram.hint + ' 每张卡左边是真实起始状态，右边是俯视图（彩色＝本课要盯的块，蓝框＝关键位置，斜线阴影＝本课不管的块），四周小条是侧面颜色。本课重点看：' + les.diagram.focusHint + '。' +
+    renderDiagTip(les);
+  }
+  // v1.5.5：正文只留「认情况」核心判断，长说明收进「📖 图例详解」
+  function renderDiagTip(les) {
+    var parts = les.diagram.focusHint.split('；');
+    var findHtml;
+    if (parts.length === les.cases.length) {   // 每条判断正好对应一个情况：配迷你俯视图，点了就切
+      if (parts.length > 1) parts[0] = parts[0].replace(/^[^：]*：/, '');
+      findHtml = '<p class="findhead">认情况，对号入座（点一条直接切到该情况）：</p><ul class="findlist">' +
+        parts.map(function (t, i) {
+          t = t.replace(/[，,；]?\s*→\s*情况\s*\d+\s*$/, '');   // 「→ 情况 N」与加粗标签重复，去掉
+          var d = L.buildDemo(lessonIdx, i);
+          return '<li data-case="' + i + '" class="' + (i === caseIdx ? 'on' : '') + '">' +
+            '<span class="minidiag">' + diagHtml(d.diagram) + '</span>' +
+            '<span class="findtxt"><b>情况 ' + (i + 1) + '</b>　' + t + '</span></li>';
+        }).join('') + '</ul>';
+    } else {
+      findHtml = '<b>认情况：</b>' + les.diagram.focusHint;
+    }
+    $('diagTip').innerHTML = findHtml +
+      '<details class="tips"><summary>📖 图例详解</summary><ul class="tipul">' +
+      '<li><b>只看有效块：</b>' + les.focusNote + '</li>' +
+      '<li><b>俯视图怎么看：</b>' + les.diagram.hint + '</li>' +
+      '<li><b>图例：</b>彩色＝已拼好 / 本课要处理；蓝框＝要盯的那一块；斜线＝本课不管，而且真的还没拼好。' +
       '<div class="keylegend"><span><i class="sw sw-color"></i>彩色＝已拼好 / 本课要处理</span>' +
       '<span><i class="sw sw-focus"></i>蓝框＝要盯的那一块</span>' +
-      '<span><i class="sw sw-hatch"></i>斜线＝本课不管，而且真的还没拼好</span></div>';
+      '<span><i class="sw sw-hatch"></i>斜线＝本课不管，而且真的还没拼好</span></div></li>' +
+      '</ul></details>';
+    Array.prototype.forEach.call($('diagTip').querySelectorAll('li[data-case]'), function (li) {
+      li.onclick = function () { selectCase(lessonIdx, parseInt(li.dataset.case, 10)); };
+    });
   }
   function renderCases() {
     var les = L.LESSONS[lessonIdx];
@@ -1445,23 +1500,22 @@
     setStatic(demo.states[0]);
     applyFocus();
     renderLevels(); renderLessonList(); renderOverview(); renderCases(); renderFrame();
-    var grip = '<b>握法：</b>白色在下（D）、绿色朝前（F）、黄色在上（U），全程不换握法。<br>' +
-      '<b>只看有效块：</b>' + L.LESSONS[lessonIdx].focusNote +
-      ' 点视图右上角「只看有效块」可切回全色对照。<br>';
+    var grip = '<p class="grip-core"><b>握法：</b>白色在下（D）、绿色朝前（F）、黄色在上（U），全程不换握法。</p>' +
+      '<details class="tips"><summary>📖 详细说明</summary><ul class="tipul">';
     if (demo.goal === 'cross') {
-      grip += '<b>这一课的终点不是复原：</b>起点是真实打乱的魔方（白色底面只有中心是白色），跟着做完得到的是' +
-        '<b>白十字</b>，四个角和其它块都还没做——那正是后面几课的内容。<br>';
+      grip += '<li><b>这一课的终点不是复原：</b>起点是真实打乱的魔方（白色底面只有中心是白色），跟着做完得到的是<b>白十字</b>，四个角和其它块都还没做——那正是后面几课的内容。</li>';
     } else if (demo.goal === 'stage7') {
-      grip += '<b>这一课才轮到六面复原：</b>前面六课的成果都已经拼好，起点只差四条顶棱的位置；跟着做完六个面全部复原。<br>';
+      grip += '<li><b>这一课才轮到六面复原：</b>前面六课的成果都已经拼好，起点只差四条顶棱的位置；跟着做完六个面全部复原。</li>';
     } else {
-      grip += '<b>这一课的终点不是六面复原：</b>' + les.goalText +
-        ' 已经拼好的块保留颜色，本课新拼好的那一块描蓝框；<b>还没学的块是真的乱着</b>，只是画上了斜线阴影，' +
-        '点「看全色」就能看到它们其实并没有拼好。所以对比起点和终点，一眼能看出这一课多做了哪一块。<br>';
+      grip += '<li><b>这一课的终点不是六面复原：</b>' + les.goalText +
+        ' 还没学的块是真的乱着，只是画上了斜线阴影，点「看全色」就能看到它们其实并没有拼好。</li>';
     }
-    grip += '<b>只看有效块怎么读：</b>彩色＝已经拼好的和本课要处理的块，蓝框＝要盯的位置，斜线阴影＝本课不管、也真的还没拼好的块。' +
-      ' 点视图右上角「只看有效块」可切回全色对照。<br>' +
-      '<b>怎么练：</b>先在上面几张情况图里找最像自己魔方的一张，再用「单转下一格」一转一转跟，或点播放连播；' +
-      '七课的演示都由真实魔方状态生成，公式不会教错。';
+    grip += '<li><b>只看有效块：</b>' + L.LESSONS[lessonIdx].focusNote +
+      ' 点视图右上角「只看有效块」可切回全色对照。</li>' +
+      '<li><b>图怎么读：</b>彩色＝已经拼好的和本课要处理的块，蓝框＝要盯的位置，斜线阴影＝本课不管、也真的还没拼好的块。</li>' +
+      '<li><b>怎么练：</b>先在上面几张情况图里找最像自己魔方的一张，再用「单转下一格」一转一转跟，或点播放连播；' +
+      '七课的演示都由真实魔方状态生成，公式不会教错。</li>' +
+      '</ul></details>';
     $('grip').innerHTML = grip;
   }
   function goToTurn(k) {
