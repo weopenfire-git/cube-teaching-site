@@ -339,6 +339,8 @@
   #drillPad{margin:0}
   /* 桌面自由练习沿用原来的 turnpad，避免重复键盘 */
   body.drill-mode-practice #drillDock{display:none}
+  /* v1.5.3 课程学习：桌面不出现操作坞，手机全屏态由媒体查询接管 */
+  body.drill-mode-lesson #drillDock{display:none}
   body:not(.drill-full) #dockList,
   body:not(.drill-full) #classListBtn,
   body:not(.drill-full) #levelListBtn{display:none}
@@ -438,6 +440,25 @@
     body.drill-pad-collapsed.drill-full .dock-hint{display:none!important}
     /* ③ 键盘收起后，把省下的高度让给画布而不是留白 */
     body.drill-full #drillDock{position:fixed}
+
+    /* v1.5.3 课程学习也进全屏：底部操作坞放播放控制，课程内容收进浮层 */
+    body.drill-mode-lesson #drillPad,
+    body.drill-mode-lesson #dockPadToggle,
+    body.drill-mode-lesson #dockUndo,
+    body.drill-mode-lesson #dockReset,
+    body.drill-mode-lesson #dockHint,
+    body.drill-mode-lesson #dockList,
+    body.drill-mode-lesson #dockExit{display:none}
+    body.drill-mode-lesson #dockLessonActs{display:flex}
+    body.drill-full.drill-mode-lesson #dockLessonActs button{flex:1 1 30%;min-width:96px;height:36px;font-size:12px}
+    body.drill-mode-lesson .dock-status{white-space:normal}
+    body.drill-full.drill-mode-lesson #lessonPanel.on{display:block;position:fixed;
+      left:8px;right:8px;top:calc(58px + env(safe-area-inset-top));
+      bottom:calc(var(--dock-h,210px) + 8px);overflow:auto;z-index:130;
+      background:#fff;border-radius:12px;padding:10px 12px 4px;
+      box-shadow:0 10px 34px rgba(22,32,47,.24)}
+    body.drill-full.drill-mode-lesson #lessonPanel.on .card{background:none;padding:0 0 8px;margin:0}
+    body.drill-full.drill-mode-lesson #lessonPanel.on .card h2{display:block;font-size:14px;margin-bottom:8px}
   }
   /* 矮屏（小屏手机 / 横屏）：再压一档，保证一屏装得下 */
   @media(max-width:820px) and (max-height:660px){
@@ -461,7 +482,7 @@
       <p class="sub">一课只解决一个单点问题：先给总体公式，再对照魔方图示找自己的情况，最后逐转跟着做。</p>
       <div class="statbar" id="statbar"></div>
     </div>
-    <span class="ver">v1.5.2 2026-11-16</span>
+    <span class="ver">v1.5.3 2026-11-16</span>
   </header>
 
   <div class="modebar">
@@ -580,6 +601,8 @@
           <div class="listwrap" id="listwrapLesson"></div>
         </div>
       </div>
+      <!-- v1.5.3 课程学习手机全屏时操作坞的挂载点（dock 是 position:fixed，桌面不显示） -->
+      <div class="dock-slot" id="lessonDockSlot"></div>
 
       <!-- ===== 实战求解模式 ===== -->
       <div id="solvePanel" hidden>
@@ -633,6 +656,16 @@
                 <button id="dockHint">看提示</button>
                 <button id="dockList">☰ 选关</button>
                 <button id="dockExit">返回课程</button>
+              </div>
+              <!-- v1.5.3 课程学习全屏专用：同一套播放控制收进操作坞，桌面隐藏 -->
+              <div class="dock-actions" id="dockLessonActs" hidden>
+                <button id="dockLPrev">◀ 上一段</button>
+                <button id="dockLPlay" class="primary">▶ 播放</button>
+                <button id="dockLNext">下一段 ▶</button>
+                <button id="dockLReset">⏮ 重置</button>
+                <button id="dockLTurnPrev">|◀ 退一转</button>
+                <button id="dockLTurnNext" class="primary">单转下一格</button>
+                <button id="dockLCatalog">☰ 课程内容</button>
               </div>
             </div>
           </div>
@@ -698,6 +731,7 @@
   </main>
 
   <footer>
+    <b>v1.5.3：</b><b>课程学习手机全屏</b>：手机竖屏进课程学习也一屏装下——顶部标签可收起，底部固定操作坞放「上一段 / 播放 / 下一段 / 重置 / 退一转 / 单转下一格」，当前转到第几转常驻可见；课程目录与本课讲解收进「☰ 课程内容」浮层，随开随关，魔方不再被顶栏挤出屏幕。<br>
     <b>v1.5.2：</b>闯关<b>起步梯度重做</b>：第 1 关只差一条白棱、拧一下就补上，第 2 关先转顶层对准再翻下，第 3 关让位插入回正，第 4 关缺两条棱；四个起点都从第 1 课真实终点倒做，参考解经最优距离校验，没有假步数。闯关时目标写得更明白（「目标 白十字 4/4，现在 3/4」，非末关不用六面复原）。<br>
     <b>v1.5.1：</b>手机竖屏再优化：<b>顶部标签可收起</b>（收起后只留一条细条显示当前模式与关卡）、<b>转法键盘可收起</b>（收起后只留状态行和一行操作键），两种收起状态浏览器会记住。补上刘海屏安全区与动态视口适配：地址栏伸缩、软键盘弹出、字体加载、横竖屏切换都会自动重算，魔方不会被底部操作坞挡住。另外声明浅色配色，避免部分手机浏览器夜间模式把页面强制反色成黑底。<br>
     <b>v1.5.0：</b>新增<b>课堂练习</b>与<b>闯关练习</b>：三个主标签改为「课程学习 / 课堂练习 / 闯关练习」。课堂练习按七课 22 种情况出题，起点就是该课演示的真实起点（前序成果真保留、本课目标真没拼好、没学的块真乱着），过关判定逐课不同，不退回一律六面复原；闯关练习按真实教学梯度排了 <b>26 关</b>，第 1 关只差一条白棱、拧一下就补上，过关解锁下一关，每关只记本机个人最佳用时，不上传成绩、不显示他人名字。原「实战求解」与「个人练习」收成标签栏右侧的「自由求解」「自由练习」两个工具按钮，任意打乱求解、随机打乱自由练、看答案、成绩卡都照旧可用。手机竖屏进入练习类模式自动切换<b>全屏紧凑布局</b>：一屏内同时显示魔方、转法键盘和操作键，并按屏幕高矮与宽度分别适配。<br>
@@ -933,7 +967,11 @@
   }
   function spd() { return SPEEDS[speedIdx]; }
   function resetPlay() { anim = null; once = false; gap = 0; loopGap = 0; frame = 0; needDraw = true; }
-  function syncPlayBtn() { $('btnPlay').textContent = playing ? '⏸ 暂停' : '▶ 播放'; }
+  function syncPlayBtn() {
+    var label = playing ? '⏸ 暂停' : '▶ 播放';
+    $('btnPlay').textContent = label;
+    var dp = $('dockLPlay'); if (dp) dp.textContent = label;   // 课程全屏操作坞里的播放键同步文案
+  }
   // 第 1 课：把「白色棱块贴纸」所在槽位找出来描蓝框，四张情况卡就能看出白棱散在哪
   function whiteEdgeSlots(state) {
     var a = [];
@@ -1296,7 +1334,7 @@
     $('turnCounter').textContent = '第 ' + frame + ' / ' + n + ' 转';
     $('vpBadge').innerHTML = t ? (isY ? '整体旋转 <b>y</b>' : '正在拧 <b>' + t.charAt(0) + '</b> 面') : '拖拽可自由旋转视角';
     markFace(t);
-    if (mode === 'lesson') highlightTurnRow();
+    if (mode === 'lesson') { highlightTurnRow(); if (document.body.classList.contains('drill-full')) renderDockStatus(); }
   }
 
   /* ---------- 播放状态机 ---------- */
@@ -1480,14 +1518,21 @@
     // 个人练习没有「上一段 / 下一段」概念，把这两个分段按钮藏起来
     $('btnPrev').hidden = isDrill(m);
     $('btnNext').hidden = isDrill(m);
-    // v1.5.0：手机竖屏进入练习类模式自动切全屏，一屏内同时看见魔方与操作键
+    // v1.5.0：手机竖屏进入练习类模式自动切全屏；v1.5.3 课程学习同样全屏
     document.body.classList.toggle('drill-mode-practice', m === 'practice');
     document.body.classList.toggle('drill-mode-class', m === 'class');
     document.body.classList.toggle('drill-mode-level', m === 'level');
-    document.body.classList.toggle('drill-full', isDrill(m) && isCompact());
+    document.body.classList.toggle('drill-mode-lesson', m === 'lesson');
+    $('dockLessonActs').hidden = m !== 'lesson';   // 全局 [hidden]!important，只能用属性切换
+    document.body.classList.toggle('drill-full', (isDrill(m) || m === 'lesson') && isCompact());
     applyChromeState();
-    if (isDrill(m)) { mountDock(m); closeGridFloat(); }
+    if (isDrill(m) || m === 'lesson') { mountDock(m); if (isDrill(m)) closeGridFloat(); }
     else $('drillDock').hidden = true;
+    if (m === 'lesson') {
+      $('lessonPanel').classList.remove('on');   // 课程内容浮层默认收起
+      $('dockLCatalog').textContent = '☰ 课程内容';
+      renderDockStatus();
+    }
     if (m === 'lesson') {
       $('modeHint').textContent = '初级七课：一课只多拼好一类块，没学的块仍是乱的';
       var caseTotal = L.LESSONS.reduce(function (a, x) { return a + x.cases.length; }, 0);
@@ -1520,7 +1565,7 @@
       if (levelNo > levelUnlocked) levelNo = levelUnlocked;
       renderLevelGrid(); startLevel();
     }
-    if (isDrill(m)) { renderDockStatus(); syncDockHeight(); }
+    if (isDrill(m) || m === 'lesson') { renderDockStatus(); syncDockHeight(); }
     playing = !isDrill(m); syncPlayBtn(); needDraw = true;
     // 全屏切换改了画布尺寸，下一帧重算分辨率，避免 3D 视图拉伸或糊掉
     setTimeout(function () { renderer.resize(); needDraw = true; syncDockHeight(); }, 0);
@@ -1627,7 +1672,7 @@
   var drillTokens = [];
   function isCompact() { return !!(window.matchMedia && window.matchMedia('(max-width:820px)').matches); }
   function mountDock(m) {
-    var id = m === 'class' ? 'classDockSlot' : (m === 'level' ? 'levelDockSlot' : 'practiceDockSlot');
+    var id = m === 'class' ? 'classDockSlot' : (m === 'level' ? 'levelDockSlot' : (m === 'lesson' ? 'lessonDockSlot' : 'practiceDockSlot'));
     var slot = $(id), dock = $('drillDock');
     if (slot && dock.parentNode !== slot) slot.appendChild(dock);
     dock.hidden = false;
@@ -1649,6 +1694,7 @@
     var t = names[mode] || '练习';
     if (mode === 'level') t += ' 第 ' + levelNo + ' / ' + L.LEVEL_DEFS.length + ' 关';
     else if (mode === 'class') t += ' 第 ' + (classLesson + 1) + ' 课';
+    else if (mode === 'lesson') t += ' 第 ' + (lessonIdx + 1) + '/' + L.LESSONS.length + ' 课';
     $('drillNow').textContent = t;
   }
   function applyChromeState() {
@@ -1685,6 +1731,13 @@
     syncDockHeight();
   }
   function renderDockStatus() {
+    if (mode === 'lesson') {   // v1.5.3 课程全屏：操作坞常驻显示转到第几转
+      var lt = turns();
+      $('dockStatus').innerHTML = (demo ? '<b>' + demo.title + '</b>' : '课程演示') +
+        '　第 <b>' + (lessonIdx + 1) + '/' + L.LESSONS.length + '</b> 课　第 <b>' + frame + ' / ' + lt.length + '</b> 转' +
+        (anim ? '　正在拧 <b>' + anim.token + '</b>' : (frame >= lt.length && lt.length ? '　本段完成，可重看或换情况' : ''));
+      return;
+    }
     if (!isDrill(mode)) return;
     var g = currentGoal() || { fn: function () { return 0; }, target: 1, label: '' };
     var s = stateAt(frame), pv = s ? g.fn(s) : 0;
@@ -1893,7 +1946,7 @@
   });
   $('btnGray').onclick = function () { grayMode = !grayMode; applyFocus(); };
   window.addEventListener('resize', function () {
-    document.body.classList.toggle('drill-full', isDrill(mode) && isCompact());
+    document.body.classList.toggle('drill-full', (isDrill(mode) || mode === 'lesson') && isCompact());
     renderer.resize(); needDraw = true; drawCaseThumbnails(); syncDockHeight();
   });
   if (window.ResizeObserver) new ResizeObserver(function () { renderer.resize(); needDraw = true; }).observe(canvas);
@@ -1966,6 +2019,21 @@
   $('dockHint').onclick = drillHintToggle;
   $('dockList').onclick = toggleGridFloat;
   $('dockExit').onclick = drillExit;
+  /* v1.5.3 课程学习全屏：操作坞按钮与左栏原按钮走同一套逻辑 */
+  $('dockLPrev').onclick = function () { $('btnPrev').click(); };
+  $('dockLPlay').onclick = function () { $('btnPlay').click(); };
+  $('dockLNext').onclick = function () { $('btnNext').click(); };
+  $('dockLReset').onclick = function () { $('btnReset').click(); };
+  $('dockLTurnPrev').onclick = function () { stepTurn(-1); };
+  $('dockLTurnNext').onclick = function () { stepTurn(1); };
+  $('dockLCatalog').onclick = function () {
+    var el = $('lessonPanel');
+    var on = !el.classList.contains('on');
+    el.classList.toggle('on', on);
+    $('dockLCatalog').textContent = on ? '× 关闭内容' : '☰ 课程内容';
+    if (on) drawCaseThumbnails();   // 浮层刚展开时重画情况卡缩略图，避免按隐藏尺寸画空
+    syncDockHeight();
+  };
   $('pracNew').onclick = function () { pracNew(); };
   $('pracReset').onclick = function () { pracReset(); };
   $('pracUndo').onclick = function () { stepTurn(-1); };
