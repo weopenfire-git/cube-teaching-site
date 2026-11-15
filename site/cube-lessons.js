@@ -476,26 +476,46 @@
     return n;
   }
 
-  /* ---------------- 闯关练习关卡定义（v1.5.0） ----------------
-   * 铁律：每个起点都必须是真实演示状态，绝不编造、绝不随机打乱。
-   * 预备 3 关取第 1 课情况 1 的 states[] 中 crossArms = 1/2/3 第一次出现的帧；
-   * 其余 22 关直接取每个演示的 startState（前序成果真保留、本课目标真没拼好）。
-   * -1 是公式执行中前序成果被临时破坏的哨兵帧，抽帧时必须排除。 */
+  /* ---------------- 闯关练习关卡定义（v1.5.2 起步梯度重做） ----------------
+   * 铁律不变：每个起点都必须是真实状态，绝不编造、绝不随机打乱。
+   * 起步 4 关从「第 1 课演示的真实终点」（白十字 4/4、六面未复原）出发，
+   * 用固定参考解倒做生成起点；参考解经过最小距离 BFS 校验（verify-levels.cjs 复查），
+   * 保证它就是最优解——第 1 关只差一条棱、拧一下就补上，不存在「看似 3 步其实 1 步」的假难度。
+   * 解法梯度对应第 1 课的教学动作：直接翻下 → 先转 U 对准再翻下 → 让位插入回正 → 双棱组合。
+   * 其余 22 关仍直接取每个演示的 startState（前序成果真保留、本课目标真没拼好）。 */
+  var PREP_SOL = [
+    { sol: ['R'], miss: 3,
+      title: '起步 1：只差一条棱',
+      desc: '白十字 3 / 4：最后一条白棱就在旁边，拧一下 R 把它翻下来归位' },
+    { sol: ['U', 'R2'], miss: 3,
+      title: '起步 2：先对准再翻下',
+      desc: '仍只差 1 条棱：先转顶层 U 让白棱对准中心颜色，再 R2 翻下去' },
+    { sol: ['F', "R'", "F'"], miss: 3,
+      title: '起步 3：让位插入回正',
+      desc: '只差 1 条棱但被挡住了：F 让位、R’ 插入、F’ 回正，三转补齐' },
+    { sol: ['U', 'F', "R'", 'F'], miss: 2,
+      title: '起步 4：缺两条棱',
+      desc: '白十字 2 / 4：先 U 对准第一条，再用上一关的手法补第二条，四转补齐' }
+  ];
+  function invToken(t) {
+    if (t.charAt(t.length - 1) === "'") return t.charAt(0);
+    if (t.charAt(t.length - 1) === '2') return t;
+    return t + "'";
+  }
   function buildLevelDefs() {
     var defs = [];
-    var d1 = buildDemo(0, 0), g1 = STAGE_GOAL[1];
-    [1, 2, 3].forEach(function (v, i) {
-      var idx = -1;
-      for (var k = 0; k < d1.states.length; k++) {
-        if (g1.fn(d1.states[k]) === v) { idx = k; break; }
-      }
-      if (idx < 0) return;   // 该进度帧不存在就跳过，不许编造
+    var d1 = buildDemo(0, 0);
+    var crossDone = d1.finalState.slice();          // 真实状态：白十字 4/4、六面未复原
+    if (STAGE_GOAL[1].fn(crossDone) !== 4 || Cube.isSolved(crossDone)) crossDone = null;
+    PREP_SOL.forEach(function (p) {
+      if (!crossDone) return;                       // 基准状态异常就不出起步关，绝不编造
+      var sol = p.sol.slice();
+      var start = Cube.applySeq(crossDone, sol.slice().reverse().map(invToken));
       defs.push({
-        seg: '预备起步', lesson: 1, caseIdx: 0,
-        title: '预备 ' + (i + 1) + '：只差 ' + (4 - v) + ' 条白棱',
-        desc: '白十字已经拼好 ' + v + ' / 4 条棱，把剩下的补齐就行',
-        start: d1.states[idx].slice(), tokens: d1.tokens.slice(idx),
-        startProgress: v
+        seg: '起步梯度', lesson: 1, caseIdx: 0,
+        title: p.title, desc: p.desc,
+        start: start, tokens: sol,
+        startProgress: STAGE_GOAL[1].fn(start)
       });
     });
     LESSONS.forEach(function (lesson, li) {

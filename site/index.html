@@ -461,7 +461,7 @@
       <p class="sub">一课只解决一个单点问题：先给总体公式，再对照魔方图示找自己的情况，最后逐转跟着做。</p>
       <div class="statbar" id="statbar"></div>
     </div>
-    <span class="ver">v1.5.1 2026-11-15</span>
+    <span class="ver">v1.5.2 2026-11-16</span>
   </header>
 
   <div class="modebar">
@@ -662,8 +662,8 @@
       <!-- ===== 闯关练习模式（v1.5.0） ===== -->
       <div id="levelPanel" hidden>
         <div class="card">
-          <h2>闯关练习 25 关</h2>
-          <p class="prac-sub">从只差 3 条白棱开始，一关一关做到六面复原。过关自动解锁下一关，每关只记本机个人最佳用时，不上传任何成绩。</p>
+          <h2>闯关练习 26 关</h2>
+          <p class="prac-sub">起步 4 关专练白十字：第 1 关只差一条棱，拧一下就补上，然后一关一关加难度，第 5 关起进入各课真实练习，最后一关六面复原。过关自动解锁下一关，每关只记本机个人最佳用时，不上传任何成绩。</p>
           <div class="grid-float" id="levelGridFloat">
             <div class="level-grid" id="levelGrid"></div>
           </div>
@@ -698,8 +698,9 @@
   </main>
 
   <footer>
+    <b>v1.5.2：</b>闯关<b>起步梯度重做</b>：第 1 关只差一条白棱、拧一下就补上，第 2 关先转顶层对准再翻下，第 3 关让位插入回正，第 4 关缺两条棱；四个起点都从第 1 课真实终点倒做，参考解经最优距离校验，没有假步数。闯关时目标写得更明白（「目标 白十字 4/4，现在 3/4」，非末关不用六面复原）。<br>
     <b>v1.5.1：</b>手机竖屏再优化：<b>顶部标签可收起</b>（收起后只留一条细条显示当前模式与关卡）、<b>转法键盘可收起</b>（收起后只留状态行和一行操作键），两种收起状态浏览器会记住。补上刘海屏安全区与动态视口适配：地址栏伸缩、软键盘弹出、字体加载、横竖屏切换都会自动重算，魔方不会被底部操作坞挡住。另外声明浅色配色，避免部分手机浏览器夜间模式把页面强制反色成黑底。<br>
-    <b>v1.5.0：</b>新增<b>课堂练习</b>与<b>闯关练习</b>：三个主标签改为「课程学习 / 课堂练习 / 闯关练习」。课堂练习按七课 22 种情况出题，起点就是该课演示的真实起点（前序成果真保留、本课目标真没拼好、没学的块真乱着），过关判定逐课不同，不退回一律六面复原；闯关练习按真实教学梯度排了 <b>25 关</b>，从只差 3 条白棱起步，过关解锁下一关，每关只记本机个人最佳用时，不上传成绩、不显示他人名字。原「实战求解」与「个人练习」收成标签栏右侧的「自由求解」「自由练习」两个工具按钮，任意打乱求解、随机打乱自由练、看答案、成绩卡都照旧可用。手机竖屏进入练习类模式自动切换<b>全屏紧凑布局</b>：一屏内同时显示魔方、转法键盘和操作键，并按屏幕高矮与宽度分别适配。<br>
+    <b>v1.5.0：</b>新增<b>课堂练习</b>与<b>闯关练习</b>：三个主标签改为「课程学习 / 课堂练习 / 闯关练习」。课堂练习按七课 22 种情况出题，起点就是该课演示的真实起点（前序成果真保留、本课目标真没拼好、没学的块真乱着），过关判定逐课不同，不退回一律六面复原；闯关练习按真实教学梯度排了 <b>26 关</b>，第 1 关只差一条白棱、拧一下就补上，过关解锁下一关，每关只记本机个人最佳用时，不上传成绩、不显示他人名字。原「实战求解」与「个人练习」收成标签栏右侧的「自由求解」「自由练习」两个工具按钮，任意打乱求解、随机打乱自由练、看答案、成绩卡都照旧可用。手机竖屏进入练习类模式自动切换<b>全屏紧凑布局</b>：一屏内同时显示魔方、转法键盘和操作键，并按屏幕高矮与宽度分别适配。<br>
     <b>v1.4.2：</b>「个人练习」新增<b>生成成绩卡</b>：按当前真实状态画出六面展开图，配上打乱难度、我的转法步数、复原进度、累计复原局数、已解锁成就数和日期，可保存成 PNG 发朋友圈，也可复制成绩文字直接粘到微信聊天。所有数字都取自当场状态，不编造成绩。<br>
     <b>v1.4.1：</b>顶部「📖 课程学习 / ⚡ 实战求解 / 🎯 个人练习」一栏改为<b>吸顶常驻</b>：往下滚动时三个模式标签、符号说明、登录/用户角标始终钉在页面最上方，随时可切换模式或登录。<br>
     <b>v1.4.0：</b>新增<b>登录与成就系统</b>：未登录可试用全部功能（课程学习 / 实战求解 / 个人练习）；点「💾 保存进度」或「⚔ 好友 PK」时才要求登录（邮箱 / 手机验证码 / 微信开发态模拟，三选一）。登录后成就与当前练习进度按账号保存在本机，并新增「成就与进度」卡片（初次复原 / 20 步与 35 步复原 / 累计五局 / 七课通关 / 三模式全体验等）。对接独立登录后端（默认 http://localhost:3001），好友 PK 面板下一轮上线。个人练习首次进入新增两步引导（① 符号说明 ② 操作栏）。<br>
@@ -846,7 +847,7 @@
   var levelNo = 1, levelStart = null, levelUnlocked = 1, levelBest = {};
   var drillSolved = false, drillStartedAt = 0, drillHint = '', pendingSolve = null;
   try {
-    var lvTotal = (typeof L !== 'undefined' && L.LEVEL_DEFS) ? L.LEVEL_DEFS.length : 25;
+    var lvTotal = (typeof L !== 'undefined' && L.LEVEL_DEFS) ? L.LEVEL_DEFS.length : 26;
     levelUnlocked = Math.max(1, Math.min(lvTotal, parseInt(localStorage.getItem('cubeLevelUnlocked') || '1', 10) || 1));
     levelBest = JSON.parse(localStorage.getItem('cubeLevelBest') || '{}') || {};
   } catch (e) { levelUnlocked = 1; levelBest = {}; }
@@ -1257,9 +1258,13 @@
           ? '🎉 <b>本课目标已达成</b>，点「下一题」继续练'
           : ('课堂练习：' + g.label + ' 现在 <b>' + pv + ' / ' + g.target + '</b>，已转 <b>' + n + '</b> 步');
       } else if (mode === 'level') {
+        var lvDef = L.levelDef(levelNo);
+        var notFinal = lvDef && lvDef.lesson !== 7;
         $('frameDesc').innerHTML = drillSolved
           ? '🎉 <b>第 ' + levelNo + ' 关过关了</b>，点「下一关」继续'
-          : ('第 <b>' + levelNo + '</b> 关：' + g.label + ' 现在 <b>' + pv + ' / ' + g.target + '</b>，已转 <b>' + n + '</b> 步');
+          : ('第 <b>' + levelNo + '</b> 关：目标 <b>' + g.label + '</b>，现在 <b>' + pv + ' / ' + g.target + '</b>' +
+             (notFinal ? '，<b>不用六面复原</b>' : '') + '，已转 <b>' + n + '</b> 步' +
+             (lvDef && n === 0 ? '<br><span style="color:#3F4A5C">' + lvDef.desc + '</span>' : ''));
       } else {
         $('frameDesc').innerHTML = solved
           ? '🎉 <b>魔方已复原！</b> 你可以「新打乱」再来一局'
@@ -1510,7 +1515,7 @@
       applyFocus();
       renderClassTabs(); renderClassGrid(); startClassQuestion();
     } else if (m === 'level') {
-      $('modeHint').textContent = '25 关从最简单起步，过关解锁下一关，只记本机个人最佳';
+      $('modeHint').textContent = '26 关从只差一条棱起步，过关解锁下一关，只记本机个人最佳';
       applyFocus();
       if (levelNo > levelUnlocked) levelNo = levelUnlocked;
       renderLevelGrid(); startLevel();
@@ -1811,7 +1816,7 @@
     el.innerHTML = drillSolved
       ? ('🎉 <b>第 ' + levelNo + ' 关过关</b>，用了 <b>' + practiceTokens.length + '</b> 步，用时 <b>' +
          fmtTime(Date.now() - drillStartedAt) + '</b>。' +
-         (levelNo < L.LEVEL_DEFS.length ? '下一关已解锁。' : '25 关全部通关，六面复原了。'))
+         (levelNo < L.LEVEL_DEFS.length ? '下一关已解锁。' : L.LEVEL_DEFS.length + ' 关全部通关，六面复原了。'))
       : ('第 <b>' + levelNo + '</b> 关 ' + lv.seg + '，目标 <b>' + g.label + '</b> 现在 <b>' + pv + ' / ' + g.target +
          '</b>，已转 <b>' + practiceTokens.length + '</b> 步，用时 <b>' + fmtTime(Date.now() - drillStartedAt) + '</b>。' +
          (best ? ' 个人最佳 <b>' + fmtTime(best.ms) + '</b>。' : '') +
